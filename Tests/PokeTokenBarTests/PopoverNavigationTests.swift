@@ -1,10 +1,22 @@
 import XCTest
+import SwiftUI
 @testable import PokeTokenBar
 
 // 팝오버 내비게이션 리셋 계약 — 닫혔다 열릴 때 AppDelegate.togglePopover 가 reset()을 불러
 // 항상 Home 으로 돌아가게 한다(설정 화면 잔류 방지).
 @MainActor
 final class PopoverNavigationTests: XCTestCase {
+    func testTopLevelNavigationFitsInsidePopoverInEveryLanguage() {
+        for language in AppLanguage.allCases {
+            let view = PopoverTabPicker(selection: .constant(.home), l: L(language))
+            let controller = NSHostingController(rootView: view)
+            let size = controller.sizeThatFits(in: CGSize(width: PopoverMetrics.contentWidth,
+                                                          height: 60))
+            XCTAssertLessThanOrEqual(size.width, PopoverMetrics.contentWidth,
+                                     "Navigation clips in \(language): \(size.width)pt")
+        }
+    }
+
     func testDefaultsToHome() {
         let nav = PopoverNavigation()
         XCTAssertFalse(nav.showSettings)

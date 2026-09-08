@@ -4,6 +4,28 @@ import SwiftUI
 enum PopoverTab { case home, shop, bag, collection, usage, trade }
 enum CollectionTab { case owned, pokedex, catchLog }
 
+/// Top-level navigation kept as a separate view so its rendered width can be
+/// checked against the popover's actual content width.
+@MainActor
+struct PopoverTabPicker: View {
+    @Binding var selection: PopoverTab
+    let l: L
+
+    var body: some View {
+        Picker("", selection: $selection) {
+            Text("Pokémon").tag(PopoverTab.home)
+            Text(l.usageTab).tag(PopoverTab.usage)
+            Text(l.shop).tag(PopoverTab.shop)
+            Text(l.bag).tag(PopoverTab.bag)
+            Text(l.collection).tag(PopoverTab.collection)
+            Text("Trade").tag(PopoverTab.trade)
+        }
+        .pickerStyle(.segmented)
+        .controlSize(.mini)
+        .labelsHidden()
+    }
+}
+
 /// 팝오버 치수의 단일 소스. 자식이 쓸 수 있는 폭을 알아야 할 때 이 값을 쓴다 — 넘치는 자식이
 /// 부모 폭을 부풀리므로 GeometryReader 로 재면 순환한다.
 enum PopoverMetrics {
@@ -104,16 +126,7 @@ struct PopoverView: View {
         @Bindable var nav = nav
         return VStack(alignment: .leading, spacing: 12) {
             updateBanner
-            Picker("", selection: $nav.tab) {
-                Text("Pokémon").tag(PopoverTab.home)
-                Text(l.usageTab).tag(PopoverTab.usage)
-                Text(l.shop).tag(PopoverTab.shop)
-                Text(l.bag).tag(PopoverTab.bag)
-                Text(l.collection).tag(PopoverTab.collection)
-                Text("Trade").tag(PopoverTab.trade)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            PopoverTabPicker(selection: $nav.tab, l: l)
 
             if let receipt = trading.completion {
                 TradeCompletionView(receipt: receipt, received: trading.receivedPokemon(for: receipt),
