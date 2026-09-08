@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
     private var statusItem: NSStatusItem!
     private let popover = NSPopover()
+    private let popoverAnchor = StablePopoverAnchor()
     private var outsideClickMonitor = OutsideClickMonitor()
     private var store: UsageStore!
     private var companion: CompanionStore!
@@ -610,7 +611,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             buildPopoverContent()   // 열 때 호스팅 트리 생성(닫힐 때 해제)
             // LSUIElement 앱이 비활성이면 팝오버 내부 버튼 클릭이 무시됨 — show 전에 활성화 보장
             NSApp.activate(ignoringOtherApps: true)
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            // Snapshot the button's current screen position. Ice and similar menu-bar
+            // managers can rehide/move the real status-item window after the click;
+            // NSPopover otherwise follows that move and interrupts an active game.
+            popoverAnchor.show(popover, relativeTo: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKeyAndOrderFront(nil)
             syncMenuAnimation()   // 팝오버 열림 → 메뉴바 애니메이션 정지(중복 + WindowServer 부하 회피)
             store.requestNotificationAuthorizationIfNeeded()   // 알림 권한은 사용자가 앱을 처음 열 때 요청
@@ -627,6 +631,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// 팝오버가 닫히면 호스팅 컨트롤러 해제(숨은 트리 재레이아웃 비용 제거) + 메뉴바 애니메이션 재개.
     func popoverDidClose(_ notification: Notification) {
         stopOutsideClickMonitor()
+        popoverAnchor.clear()
         popover.contentViewController = nil
         syncMenuAnimation()
     }
