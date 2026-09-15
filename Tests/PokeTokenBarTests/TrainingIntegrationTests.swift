@@ -196,7 +196,9 @@ final class TrainingIntegrationTests: XCTestCase {
         }
         XCTAssertEqual(store.state.dex.count, 4)
         XCTAssertNil(store.state.active)
-        XCTAssertEqual(store.state.eggUsage, cycle * 16)
+        let boostedCycle = PokemonBalance.eggHatchThreshold
+            + PokemonBalance.graduationTotal(.common) / PokemonBalance.repeatGrowthMultiplier
+        XCTAssertEqual(store.state.eggUsage, cycle * 20 - cycle - boostedCycle * 3)
         await store.hatchIfNeeded()
         XCTAssertEqual(store.state.dex.count, 4)
     }
