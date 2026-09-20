@@ -39,8 +39,7 @@ struct SettingsView: View {
     private var isBundledApp: Bool { AppEnv.isBundledApp }
 
     private var representativeSelectionText: String {
-        guard let selected = companion.representativeSpeciesID,
-              let species = companion.dexSpecies.first(where: { $0.id == selected }) else {
+        guard let species = companion.representativeDexSpecies else {
             return l.representativeFollowCurrent
         }
         return "#\(species.id) \(species.name)\(species.isShiny ? " ✨" : "")"
@@ -386,10 +385,21 @@ struct SettingsView: View {
                     } else if updater.noPublishedRelease {
                         Text("No public release is available for this fork yet.")
                             .font(.caption).foregroundStyle(.secondary)
-                    } else if let version = updater.available?.version {
+                    } else if case .offer(let version) = updater.settingsNotice {
                         Text(l.updateFound(version)).font(.caption).foregroundStyle(.orange)
                         Spacer()
-                        Button("Update & Restart") { updater.applyUpdate() }.controlSize(.small)
+                        Button(l.updateButton) { updater.applyUpdate() }.controlSize(.small)
+                    } else if case .skipped(let version) = updater.settingsNotice {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(l.skippedVersion(version))
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(spacing: 8) {
+                                Button(l.showSkippedAgain) { updater.showSkippedAgain() }.controlSize(.small)
+                                Button(l.updateButton) { updater.applyUpdate() }.controlSize(.small)
+                            }
+                        }
                     } else {
                         Text(l.upToDate(Self.appVersion)).font(.caption).foregroundStyle(.secondary)
                         Spacer()

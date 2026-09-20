@@ -220,6 +220,108 @@ final class RareCandyStoreTests: XCTestCase {
     // MARK: 사용
 
     /// 사탕은 선택한 포켓몬의 레벨만 1 올리고, 포획 진행·EV·통계를 건드리지 않는다.
+#if false // Upstream catch-meter candy semantics do not apply to PokéForge training candy.
+    func testBatchCarriesXPThroughMultipleEvolutions() async throws {
+        let s = store(rcLinear3)
+        await s.hatch(baseID: 1)
+        s.applyUsage(100_000_000)
+        giveCandies(s, 10)
+        let before = s.state.usedSinceInstall
+        let preview = try XCTUnwrap(s.planRareCandyUse(count: 3))
+        XCTAssertEqual(s.maxRareCandyUseCount, 7)
+        XCTAssertEqual(preview.count, 3)
+        XCTAssertTrue(preview.evolves)
+        XCTAssertFalse(preview.graduates)
+        XCTAssertEqual(preview.carryoverXP, 25_000_000)
+        XCTAssertEqual(preview.discardedXP, 0)
+        XCTAssertEqual(s.useRareCandy(count: 3), .evolved)
+        XCTAssertEqual(s.state.active?.stageIndex, 2)
+        XCTAssertEqual(s.state.active?.usedAtStage, preview.carryoverXP)
+        XCTAssertEqual(s.rareCandyCount, 7)
+        XCTAssertEqual(s.candyFeedbackAmount, 300_000_000)
+        XCTAssertEqual(s.state.usedSinceInstall, before)
+    }
+
+    func testBatchCapsAtGraduationAndPreservesUnusedCandies() async throws {
+        for remaining in [250_000_000, 300_000_000] {
+            let s = store(rcNoEvo)
+            await s.hatch(baseID: 20)
+            s.applyUsage(750_000_000 - remaining)
+            giveCandies(s, 5)
+            XCTAssertEqual(s.maxRareCandyUseCount, 3)
+            let preview = try XCTUnwrap(s.planRareCandyUse(count: 5))
+            XCTAssertEqual(preview.count, 3)
+            XCTAssertTrue(preview.graduates)
+            XCTAssertEqual(preview.discardedXP, 300_000_000 - remaining)
+            XCTAssertEqual(s.useRareCandy(count: 5), .graduated)
+            XCTAssertEqual(s.rareCandyCount, 2)
+            XCTAssertEqual(s.state.eggUsage, 0)
+            XCTAssertEqual(s.dexEntries.count, 1)
+            XCTAssertEqual(s.maxRareCandyUseCount, 0)
+            XCTAssertEqual(s.useRareCandy(count: 5), .unavailable)
+        }
+    }
+
+    func testBatchCapsAtInventoryAndRejectsNonpositiveAmounts() async throws {
+        let s = store(rcLinear3)
+        await s.hatch(baseID: 1)
+        giveCandies(s, 1)
+        for count in [0, -1, Int.min] {
+            XCTAssertNil(s.planRareCandyUse(count: count))
+            XCTAssertEqual(s.useRareCandy(count: count), .unavailable)
+        }
+        XCTAssertEqual(s.rareCandyCount, 1)
+        XCTAssertEqual(s.maxRareCandyUseCount, 1)
+        let preview = try XCTUnwrap(s.planRareCandyUse(count: Int.max))
+        XCTAssertEqual(preview.count, 1)
+        XCTAssertFalse(preview.evolves)
+        XCTAssertEqual(s.useRareCandy(count: Int.max), .progressed)
+        XCTAssertEqual(s.state.active?.usedAtStage, RareCandy.xp)
+        XCTAssertEqual(s.rareCandyCount, 0)
+    }
+
+    func testBatchPreviewMatchesGrowthWithDifficultyAndRepeatBonus() async throws {
+        for difficulty in [0.1, 0.5, 1.0, 2.0] {
+            for boosted in [false, true] {
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent("rc-batch-\(UUID().uuidString).json")
+                let suiteName = "rc-batch-\(UUID().uuidString)"
+                let defaults = UserDefaults(suiteName: suiteName)!
+                defer { defaults.removePersistentDomain(forName: suiteName) }
+                defaults.set(difficulty, forKey: "growthDifficulty")
+                let s = CompanionStore(provider: StubProvider(value: rcLinear3), clock: { rcNow },
+                                       fileURL: url, rng: SeededRNG(seed: 7), defaults: defaults)
+                await s.hatch(baseID: 1)
+                if boosted {
+                    s.applyUsage(10_000_000_000)
+                    await s.hatch(baseID: 1)
+                }
+                s.applyUsage(s.threshold - 1)
+                giveCandies(s, 20)
+                let preview = try XCTUnwrap(s.planRareCandyUse(count: 1))
+                let result = s.useRareCandy()
+                if preview.graduates {
+                    XCTAssertEqual(result, .graduated)
+                    XCTAssertNil(s.state.active)
+                } else {
+                    XCTAssertEqual(result, .evolved)
+                    XCTAssertEqual(s.state.active?.usedAtStage, preview.carryoverXP)
+                    let finalPreview = try XCTUnwrap(s.planRareCandyUse(count: 20))
+                    XCTAssertTrue(finalPreview.graduates)
+                    let stock = s.rareCandyCount
+                    XCTAssertEqual(s.useRareCandy(count: 20), .graduated)
+                    XCTAssertEqual(s.rareCandyCount, stock - finalPreview.count)
+                }
+                let reloaded = CompanionStore(provider: StubProvider(value: rcLinear3), fileURL: url,
+                                               defaults: defaults)
+                XCTAssertEqual(reloaded.rareCandyCount, s.rareCandyCount)
+                XCTAssertNil(reloaded.state.active)
+                XCTAssertEqual(reloaded.state.dex.count, s.state.dex.count)
+            }
+        }
+    }
+
+    /// 사탕 XP(100M) < 최소 임계(125M) → 진화 못 시키는 케이스는 부분 진행(.progressed), 통계 불변.
+#endif
     func testUseProgressesWithoutEvolution() async {
         let s = store(rcLinear3)
         await s.hatch(baseID: 1)
@@ -240,6 +342,21 @@ final class RareCandyStoreTests: XCTestCase {
         XCTAssertEqual(s.currentSpeciesID, beforeSpecies, "사탕은 진화시키지 않음")
         XCTAssertEqual(s.rareCandyCount, 0, "재고 1 소모")
         XCTAssertEqual(s.state.usedSinceInstall, beforeUsedSinceInstall, "사탕은 실사용 통계에 안 잡힘")
+    }
+
+    func testBatchUseRaisesSelectedTraineeWithoutChangingCatchProgress() async {
+        let s = store(rcLinear3)
+        await s.hatch(baseID: 1)
+        giveCandies(s, 5)
+        let before = s.state.active!
+
+        XCTAssertEqual(s.maxRareCandyUseCount, 5)
+        XCTAssertEqual(s.useRareCandy(count: 3), .progressed)
+        XCTAssertEqual(s.state.active?.progression.level, before.progression.level + 3)
+        XCTAssertEqual(s.state.active?.progression.evs, before.progression.evs)
+        XCTAssertEqual(s.state.active?.usedAtStage, before.usedAtStage)
+        XCTAssertEqual(s.state.active?.stageIndex, before.stageIndex)
+        XCTAssertEqual(s.rareCandyCount, 2)
     }
 
     /// 포획 임계 직전이어도 사탕 사용은 진화가 아니라 레벨만 올린다.

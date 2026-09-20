@@ -44,6 +44,9 @@ private struct ItemCard: View {
     let kind: ItemKind
     let count: Int
     @State private var confirming = false
+    @State private var candyCount = 1
+
+    private var selectedCandyCount: Int { min(candyCount, max(1, store.maxRareCandyUseCount)) }
 
     var body: some View {
         let l = store.l
@@ -57,18 +60,29 @@ private struct ItemCard: View {
                             Text("×\(count)").font(.caption.weight(.bold))
                                 .foregroundStyle(.secondary).monospacedDigit()
                         }
+                        Spacer(minLength: 4)
+                        if kind == .rareCandy, store.canUseRareCandy {
+                            Stepper(value: $candyCount, in: 1...max(1, store.maxRareCandyUseCount)) {
+                                Text("×\(selectedCandyCount)").font(.callout.weight(.semibold)).monospacedDigit()
+                            }
+                            .fixedSize()
+                            .accessibilityLabel(l.itemName(.rareCandy))
+                            .accessibilityValue("\(selectedCandyCount)")
+                        }
                     }
                     Text(l.itemDescription(kind))
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
             }
             useControls(l)
         }
         .padding(10)
         .background(Color.secondary.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .onChange(of: store.maxRareCandyUseCount) { _, _ in
+            candyCount = selectedCandyCount
+        }
     }
 
     /// 이 아이템을 지금 쓸 수 있나 (kind 별 — 사탕은 선택된 훈련 대상이 필요, 민트는 활성 포켓몬만).
@@ -82,14 +96,14 @@ private struct ItemCard: View {
     /// 사용 컨트롤 효과 힌트 ("+XP" / "성격 랜덤 변경").
     private func effectHint(_ l: L) -> String {
         switch kind {
-        case .rareCandy: return "+1 level · no EVs"
+        case .rareCandy: return "+\(selectedCandyCount) level\(selectedCandyCount == 1 ? "" : "s") · no EVs"
         case .mint:      return l.mintEffectHint
         case .shinyCharm: return l.shinyCharmEffectHint
         }
     }
     private func performUse() {
         switch kind {
-        case .rareCandy: _ = store.useTrainingCandy()
+        case .rareCandy: _ = store.useRareCandy(count: selectedCandyCount)
         case .mint:      _ = store.useMint()
         case .shinyCharm: break   // 보유형 — 사용 동작 없음
         }
@@ -110,7 +124,7 @@ private struct ItemCard: View {
                     Text(l.useOnCurrent(store.displayName))
                         .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                     Spacer()
-                    Button(l.use) { useNow() }
+                    Button(kind == .rareCandy ? "\(l.use) ×\(selectedCandyCount)" : l.use) { useNow() }
                         .buttonStyle(.borderedProminent).controlSize(.small)
                     Button(l.cancel) { confirming = false }
                         .buttonStyle(.borderless).controlSize(.small)

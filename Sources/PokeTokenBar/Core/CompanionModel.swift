@@ -431,6 +431,7 @@ struct MonState: Codable, Sendable {
     var totalForms: Int
     var isShiny = false             // 부화 시 확정, 진화해도 유지
     var nature: PokemonNature?      // 부화 시 확정 (구버전 저장은 nil)
+    var unownForm: UnownForm?
     /// 개체 고유 전투 프로필. 구버전 저장은 nil이며 `CompanionStore`가 한 번만 마이그레이션한다.
     var profile: PokemonProfile?
     var hasGrowthBoost = false
@@ -451,7 +452,8 @@ struct MonState: Codable, Sendable {
          rarity: Rarity, totalForms: Int, isShiny: Bool = false, nature: PokemonNature? = nil,
          profile: PokemonProfile? = nil, hasGrowthBoost: Bool = false,
          dittoDisguise: Int? = nil, dittoRevealed: Bool = false,
-         id: String = UUID().uuidString, progression: PokemonProgression = PokemonProgression()) {
+         id: String = UUID().uuidString, progression: PokemonProgression = PokemonProgression(),
+         unownForm: UnownForm? = nil) {
         self.id = id
         self.progression = progression
         self.baseID = baseID
@@ -471,6 +473,7 @@ struct MonState: Codable, Sendable {
         self.hasGrowthBoost = hasGrowthBoost
         self.dittoDisguise = dittoDisguise
         self.dittoRevealed = dittoRevealed
+        self.unownForm = UnownForm.resolved(speciesID: baseID, form: unownForm)
     }
 
     // 하위호환 디코딩: 구버전 저장에 없는 부화 속성은 기본값.
@@ -501,6 +504,8 @@ struct MonState: Codable, Sendable {
         hasGrowthBoost = try c.decodeIfPresent(Bool.self, forKey: .hasGrowthBoost) ?? false
         dittoDisguise = try c.decodeIfPresent(Int.self, forKey: .dittoDisguise)
         dittoRevealed = try c.decodeIfPresent(Bool.self, forKey: .dittoRevealed) ?? false
+        unownForm = UnownForm.resolved(speciesID: baseID,
+                                       form: try? c.decode(UnownForm.self, forKey: .unownForm))
     }
 }
 
@@ -517,6 +522,7 @@ struct DexEntry: Codable, Sendable, Identifiable {
     var caughtAt: Date?
     var isShiny = false
     var nature: PokemonNature?
+    var unownForm: UnownForm?
     /// The individual profile at graduation/release. Nil only for pre-profile saves until migration.
     var profile: PokemonProfile?
     /// 진화 체인 각 종의 다국어 이름(speciesID → langCode → name). 졸업 시 로드된 라인에서 저장 →
@@ -542,7 +548,8 @@ struct DexEntry: Codable, Sendable, Identifiable {
          caughtAt: Date?, isShiny: Bool = false, nature: PokemonNature? = nil,
          profile: PokemonProfile? = nil, names: [Int: [String: String]]? = nil,
          releasedAt: Date? = nil,
-         progression: PokemonProgression = PokemonProgression()) {
+         progression: PokemonProgression = PokemonProgression(),
+         unownForm: UnownForm? = nil) {
         self.id = id
         self.progression = progression
         self.baseID = baseID
@@ -557,6 +564,7 @@ struct DexEntry: Codable, Sendable, Identifiable {
         self.namesVersion = chainOrder.allSatisfy { names?[$0]?.isEmpty == false }
             ? Self.currentNamesVersion : nil
         self.releasedAt = releasedAt
+        self.unownForm = UnownForm.resolved(speciesID: baseID, form: unownForm)
     }
 
     // 하위호환 디코딩 (MonState 와 동일 이유).
@@ -579,6 +587,8 @@ struct DexEntry: Codable, Sendable, Identifiable {
         namesVersion = try? c.decodeIfPresent(Int.self, forKey: .namesVersion)
         // 이 필드 이전에 저장된 항목은 전부 졸업분이다 — nil 이 곧 "졸업"이라 마이그레이션이 필요 없다.
         releasedAt = try c.decodeIfPresent(Date.self, forKey: .releasedAt)
+        unownForm = UnownForm.resolved(speciesID: baseID,
+                                       form: try? c.decode(UnownForm.self, forKey: .unownForm))
     }
 }
 
@@ -627,6 +637,8 @@ struct CompanionState: Codable, Sendable {
     // 알 상태에서 미리 롤해둔 부화 종(프리패칭) — 부화 순간 네트워크 딜레이 제거. 재시작에도 유지.
     var pendingHatchID: Int?
     var hatchGenerations: Set<Int> = HatchGeneration.all
+    /// The letter is chosen with the species so prefetch warms the exact sprite that will hatch.
+    var pendingUnownForm: UnownForm?
     /// 오늘 사용량 적립 기준값 — 프로바이더별로 독립 관리한다.
     ///
     /// `nil`은 aggregate `claimedTodayTokens`만 가지고 있던 구버전 세이브가 아직 첫 유효
@@ -642,6 +654,7 @@ struct CompanionState: Codable, Sendable {
     // 종 단위 선택이라 성격 같은 개체 정보는 들고 있지 않는다. 선택 가능한 범위는 도감과 동일하게
     // 졸업분 + 현재 개체의 도달 단계이며, 그 범위에서 빠지면 reconcileRepresentativeSelection 이 nil 로 복구한다.
     var representativeSpeciesID: Int? = nil
+    var representativeUnownForm: UnownForm? = nil
     // 도감
     var dex: [DexEntry] = []
     // 소유한 (base,final) 쌍 — 분기 다양성용
@@ -679,6 +692,8 @@ struct CompanionState: Codable, Sendable {
         let selected = c.lenient(Set<Int>.self, forKey: .hatchGenerations, default: HatchGeneration.all)
             .intersection(HatchGeneration.all)
         hatchGenerations = selected.isEmpty ? HatchGeneration.all : selected
+        pendingUnownForm   = UnownForm.resolved(speciesID: pendingHatchID ?? 0,
+            form: c.lenientOptional(UnownForm.self, forKey: .pendingUnownForm))
         if c.contains(.claimedTodayTokensByProvider) {
             claimedTodayTokensByProvider = c.lenient([String: Int].self,
                                                       forKey: .claimedTodayTokensByProvider,
@@ -692,6 +707,8 @@ struct CompanionState: Codable, Sendable {
         // active 손상(빈 pathIDs 등) → 알로 폴백하되 도감·인벤토리는 보존.
         active             = c.lenientOptional(MonState.self, forKey: .active)
         representativeSpeciesID = c.lenientOptional(Int.self, forKey: .representativeSpeciesID)
+        representativeUnownForm = UnownForm.resolved(speciesID: representativeSpeciesID ?? 0,
+            form: c.lenientOptional(UnownForm.self, forKey: .representativeUnownForm))
         // 도감은 항목별 격리 — 손상 항목 하나가 도감 전체를 날리지 않게.
         dex                = c.lenient([Lossy<DexEntry>].self, forKey: .dex, default: []).compactMap(\.value)
         collectedFinals    = c.lenient(Set<String>.self, forKey: .collectedFinals, default: [])
@@ -703,22 +720,45 @@ struct CompanionState: Codable, Sendable {
 
     /// 졸업 기록 또는 현재 개체가 실제로 도달한 단계에 이 종이 포함되는가.
     /// 도감 전체 표시 모델을 만들지 않고 대표 종 하나만 확인하는 경량 경로다.
-    func ownsSpecies(_ speciesID: Int) -> Bool {
-        if dex.contains(where: { $0.chainOrder.contains(speciesID) }) { return true }
+    func ownsSpecies(_ speciesID: Int, unownForm: UnownForm? = nil) -> Bool {
+        let form = UnownForm.resolved(speciesID: speciesID, form: unownForm)
+        if dex.contains(where: {
+            $0.chainOrder.contains(speciesID)
+                && UnownForm.resolved(speciesID: speciesID, form: $0.unownForm) == form
+        }) { return true }
         guard let active else { return false }
         return active.pathIDs.prefix(active.stageIndex + 1).contains(speciesID)
+            && UnownForm.resolved(speciesID: speciesID, form: active.unownForm) == form
     }
 
     func hasCollectedFinal(forBaseID baseID: Int) -> Bool {
         collectedFinals.contains { $0.hasPrefix("\(baseID):") }
     }
 
+    /// Match Pokédex ownership, including the active Pokémon and released catch records.
+    /// Normal and shiny individuals of the same form contribute once.
+    var collectedUnownForms: Set<UnownForm> {
+        var forms = Set(dex.filter { $0.chainOrder.contains(UnownForm.speciesID) }.compactMap {
+            UnownForm.resolved(speciesID: UnownForm.speciesID, form: $0.unownForm)
+        })
+        if let active, active.pathIDs.prefix(active.stageIndex + 1).contains(UnownForm.speciesID),
+           let form = UnownForm.resolved(speciesID: UnownForm.speciesID, form: active.unownForm) {
+            forms.insert(form)
+        }
+        return forms
+    }
+
     /// 보유한 특정 종의 이로치 여부. 졸업 기록과 현재 도달 단계만 훑으며 이름·정렬·희귀도 등
     /// 도감 표시 모델은 계산하지 않는다. 위장 중인 메타몽의 이로치는 리빌 전까지 숨긴다.
-    func ownsShinySpecies(_ speciesID: Int) -> Bool {
-        if dex.contains(where: { $0.isShiny && $0.chainOrder.contains(speciesID) }) { return true }
+    func ownsShinySpecies(_ speciesID: Int, unownForm: UnownForm? = nil) -> Bool {
+        let form = UnownForm.resolved(speciesID: speciesID, form: unownForm)
+        if dex.contains(where: {
+            $0.isShiny && $0.chainOrder.contains(speciesID)
+                && UnownForm.resolved(speciesID: speciesID, form: $0.unownForm) == form
+        }) { return true }
         guard let active,
               active.pathIDs.prefix(active.stageIndex + 1).contains(speciesID),
+              UnownForm.resolved(speciesID: speciesID, form: active.unownForm) == form,
               active.isShiny else { return false }
         return active.dittoDisguise == nil || active.dittoRevealed
     }
@@ -726,8 +766,15 @@ struct CompanionState: Codable, Sendable {
     /// 대표 포켓몬은 사용자가 현재 보유한 종만 가리킨다. Fresh Egg·메타몽 리빌·손편집 세이브가
     /// 유령 종을 메뉴바와 플로팅 펫에 영구히 남기지 않게 한다.
     mutating func reconcileRepresentativeSelection() {
-        guard let selected = representativeSpeciesID else { return }
-        if !ownsSpecies(selected) { representativeSpeciesID = nil }
+        guard let selected = representativeSpeciesID else {
+            representativeUnownForm = nil
+            return
+        }
+        representativeUnownForm = UnownForm.resolved(speciesID: selected, form: representativeUnownForm)
+        if !ownsSpecies(selected, unownForm: representativeUnownForm) {
+            representativeSpeciesID = nil
+            representativeUnownForm = nil
+        }
     }
 }
 

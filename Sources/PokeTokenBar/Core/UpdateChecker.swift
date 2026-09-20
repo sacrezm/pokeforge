@@ -7,7 +7,16 @@ import Observation
 final class UpdateChecker {
     struct Available: Equatable { let version: String; let url: String }
 
+    /// What Settings should say after a check. A skipped release is not "up to date".
+    enum SettingsNotice: Equatable {
+        case offer(String)
+        case skipped(String)
+        case current
+    }
+
     private(set) var available: Available?
+    /// Newer release the user chose to skip. Hidden from the banner, still shown in Settings.
+    private(set) var skipped: Available?
 
     let currentVersion: String
     nonisolated static let repository = "sacrezm/pokeforge"
@@ -52,7 +61,16 @@ final class UpdateChecker {
         automaticTask = nil
     }
 
-    /// 최신 릴리스 조회 → 새 버전이고 사용자가 그 버전을 'skip' 하지 않았으면 available 설정.
+    var settingsNotice: SettingsNotice {
+        if let available { return .offer(available.version) }
+        if let skipped { return .skipped(skipped.version) }
+        return .current
+    }
+
+    /// Release Settings can install. A skip hides the banner; it does not throw the URL away.
+    var updateTarget: Available? { available ?? skipped }
+
+    /// 최신 릴리스 조회. 스킵한 버전은 배너(`available`)에 안 올리고 Settings(`skipped`)에만 남긴다.
     /// minInterval 보다 자주 호출되면 무시(레이트리밋 보호).
     func check(minInterval: TimeInterval = 1800) async {
         guard !isChecking else { return }
@@ -82,28 +100,56 @@ final class UpdateChecker {
               let htmlURL = URL(string: html),
               htmlURL.absoluteString == "https://github.com/\(Self.repository)/releases/tag/\(tag)"
         else { checkFailed = true; return }
+        consider(latest: tag, url: html)
+        if minInterval == 0, let skipped {
+            available = skipped
+            self.skipped = nil
+        }
+    }
+
+    /// Apply one fetched release while retaining a skipped release for Settings.
+    func consider(latest tag: String, url: String) {
         let latest = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
         let parts = latest.split(separator: ".", omittingEmptySubsequences: false)
         guard parts.count == 3, parts.allSatisfy({
             !$0.isEmpty && $0.allSatisfy({ $0.isASCII && $0.isNumber }) && Int($0) != nil
         }) else { checkFailed = true; return }
-        let skipped = defaults.string(forKey: skippedKey)
-        if Self.isNewer(latest, than: currentVersion), minInterval == 0 || latest != skipped {
-            available = Available(version: latest, url: html)
-        } else {
+        let skippedVersion = defaults.string(forKey: skippedKey)
+        guard Self.isNewer(latest, than: currentVersion) else {
             available = nil
+            skipped = nil
+            return
+        }
+        let release = Available(version: latest, url: url)
+        if latest == skippedVersion {
+            available = nil
+            skipped = release
+        } else {
+            available = release
+            skipped = nil
         }
     }
 
-    /// 이 버전은 다시 알리지 않음.
+    /// Hide the banner for this version. Settings can still see it and install it.
     func skipCurrent() {
-        if let v = available?.version { defaults.set(v, forKey: skippedKey) }
+        guard let release = available else { return }
+        defaults.set(release.version, forKey: skippedKey)
+        skipped = release
         available = nil
+    }
+
+    /// Undo a skip so the banner can show the same release again.
+    func showSkippedAgain() {
+        defaults.removeObject(forKey: skippedKey)
+        if let release = skipped {
+            available = release
+            skipped = nil
+        }
     }
 
     /// Download, signature verification, installation and relaunch use Sparkle's native UI.
     func applyUpdate() {
-        guard available != nil else { return }
+        guard updateTarget != nil else { return }
         if let installUpdate { installUpdate(); return }
         if installer == nil { installer = SparkleInstaller() }
         installer?.install()
