@@ -161,6 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private func observeStore() {
         withObservationTracking {
             _ = store.menuTitle
+            _ = store.menuToolTip
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self else { return }
@@ -218,9 +219,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             if lines.isEmpty { lines = ["⬆"] } else { lines[0] += " ⬆" }
         }
         Self.applyMenuText(lines, to: button)
-        button.toolTip = updater.available != nil && store.updateNotificationsEnabled
-            ? "An app update is available — open PokéForge to install"
-            : trading.hasUnreadActivity ? "New trading activity — click to open Trade" : nil
+        let toolTips = [
+            updater.available != nil && store.updateNotificationsEnabled
+                ? "An app update is available — open PokéForge to install" : nil,
+            trading.hasUnreadActivity ? "New trading activity — click to open Trade" : nil,
+            store.menuToolTip,
+        ].compactMap { $0 }
+        button.toolTip = toolTips.isEmpty ? nil : toolTips.joined(separator: "\n")
         needsSpriteLayout = true   // 텍스트 길이가 바뀌면 버튼 폭이 변해 이미지 자리도 움직인다
         // stale 시각 dim 제거 — 슬립/런치 직후 refresh 완료 전 몇 초간 회색으로 보여 '고장/비활성'
         // 으로 오인되던 것 방지(사용자 반복 지적). 데이터가 오래됐다는 신호가 필요하면 팝오버
