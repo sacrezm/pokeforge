@@ -19,6 +19,7 @@ struct TradingView: View {
                 if let message { Text(message).font(.caption).foregroundStyle(.secondary) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .reservesScrollerLane()
         }
         .frame(height: 390)
         .task {

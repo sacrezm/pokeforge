@@ -51,6 +51,7 @@ struct OwnedPokemonDetailView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 }
                 .textSelection(.enabled)
+                .reservesScrollerLane()
             }
             .frame(maxHeight: .infinity)
         }

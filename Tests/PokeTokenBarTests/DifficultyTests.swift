@@ -128,6 +128,20 @@ final class DifficultyTests: XCTestCase {
         XCTAssertNotNil(easy.state.active, "0.5x: 같은 양으로 부화")
     }
 
+    /// 첫 실행 안내가 실제 부화 임계를 말하는지 — 난이도 10% 에서도 "약 5M" 으로 고정돼 있던 결함.
+    func testFirstRunEggHintShowsTheScaledHatchPoint() {
+        let easy = store(growth: 0.1)
+        let expected = PokemonBalance.scaled(PokemonBalance.eggHatchThreshold, by: 0.1)
+        XCTAssertEqual(easy.eggHatchThreshold, expected)
+        XCTAssertEqual(store(growth: 1.0).eggHatchThreshold, PokemonBalance.eggHatchThreshold)
+        let expectedLabel = TokenFormatter.compact(expected)
+        for language in AppLanguage.allCases {
+            let hint = L(language).eggFirstRunHint(TokenFormatter.compact(easy.eggHatchThreshold))
+            XCTAssertTrue(hint.contains(expectedLabel), "\(language.rawValue): \(hint)")
+            XCTAssertFalse(hint.contains("5M"), "\(language.rawValue): \(hint)")
+        }
+    }
+
     // MARK: 3. 상점 — 결제 금액과 구매 가능 판정이 바뀌는가
 
     func testShopGateAndChargedAmountFollowDifficulty() async {

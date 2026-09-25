@@ -158,6 +158,7 @@ struct PokemonGameplayView: View {
             }
             .padding(.vertical, 6)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .reservesScrollerLane()
         }
         .frame(height: 520)
         .onChange(of: store.trainingPokemon?.id) { confirmingCandy = false }
