@@ -42,6 +42,8 @@ final class KeychainAutoPathTests: XCTestCase {
         defer { KeychainAccessGate.isDisabled = savedGate }
 
         KeychainReader.resetQueryCountForTesting()
+        KeychainReader.copyMatchingForTesting = { _, _ in errSecItemNotFound }
+        defer { KeychainReader.copyMatchingForTesting = nil }
         let emptyFileCache = AntigravityTokenCache(tokenFileURLs: [])
         _ = try? await AntigravityRateLimitsProvider(tokenCache: emptyFileCache).fetch(allowKeychainPrompt: true)
         XCTAssertGreaterThan(

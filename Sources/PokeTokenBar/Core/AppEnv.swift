@@ -9,6 +9,9 @@ enum AppEnv {
         Bundle.main.bundleIdentifier != nil && Bundle.main.bundlePath.hasSuffix(".app")
     }
 
+    /// XCTest loads its base class into the process; the shipped app does not link XCTest.
+    static var isTestProcess: Bool { NSClassFromString("XCTestCase") != nil }
+
     /// `PTB_PARITY=1` — a QA/parity run where live endpoints are allowed (the same flag the parity
     /// smoke tests already use). Only ever opens a gate that `isBundledApp` keeps closed.
     static var isParityRun: Bool {
@@ -27,5 +30,14 @@ enum AppEnv {
     /// tests keep observing real reads. `LiveCredentialCallGateTests` requires it in every provider.
     static var allowsLiveLimitsFetch: Bool {
         isBundledApp || isParityRun || allowLiveFetchForTesting
+    }
+
+    /// Whether a store may read and write its file. Always true for an injected path, which is how
+    /// tests check persistence against a temporary file. A store that fell back to its default
+    /// (user) path persists only in the app bundle, so `swift test` never reads or rewrites the
+    /// user's real files there. Keep this rule here instead of copying it into each store.
+    static func persistsToUserLocation(injectedFileURL: URL?,
+                                       isBundledApp: Bool = AppEnv.isBundledApp) -> Bool {
+        injectedFileURL != nil || isBundledApp
     }
 }

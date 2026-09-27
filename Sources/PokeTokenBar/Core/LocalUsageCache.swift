@@ -122,6 +122,11 @@ actor LocalUsageCache {
     private let piRoots: [URL]?
     private let ompRoots: [URL]?
     private let fileURL: URL
+    /// Whether this cache reads and writes `fileURL` (`AppEnv.persistsToUserLocation`). Not private so
+    /// tests can check the gate without doing any IO.
+    nonisolated let persistsToDisk: Bool
+    /// Default CLI roots belong to the user's live environment, so raw test binaries must not scan them.
+    nonisolated let scansDefaultRoots: Bool
     private let now: @Sendable () -> Date
     /// throwing probe 를 쓴다 — 읽기 실패(throw)와 "metadata 없음"(`nil`)은 인덱스에 남길지가 다르다.
     private let codexProbe: @Sendable (URL) throws -> String?
@@ -153,6 +158,10 @@ actor LocalUsageCache {
         self.piRoots = piRoots
         self.ompRoots = ompRoots
         self.fileURL = fileURL ?? Self.defaultFileURL
+        // `LocalUsageProvider` uses `.shared`, so without this a single `refresh()` during `swift test`
+        // reads and rewrites the user's real usage-cache.json.
+        self.persistsToDisk = AppEnv.persistsToUserLocation(injectedFileURL: fileURL)
+        self.scansDefaultRoots = AppEnv.isBundledApp || AppEnv.isParityRun
         self.now = now
         self.codexProbe = codexProbe
     }
@@ -165,6 +174,7 @@ actor LocalUsageCache {
     }()
 
     func claudeEntries(modifiedSince: Date) -> [LocalUsageReader.Entry] {
+        guard scansDefaultRoots || claudeRoots != nil || claudeRoot != nil else { return [] }
         ensureLoaded()
         let fmt = LocalUsageReader.localDayFormatter()
         // 루트가 여럿이다(CLI 기본 위치 + CLAUDE_CONFIG_DIR + Claude Desktop 임베디드 세션).
@@ -191,6 +201,7 @@ actor LocalUsageCache {
     }
 
     func codexEntries(modifiedSince: Date) -> [LocalUsageReader.Entry] {
+        guard scansDefaultRoots || codexRoots != nil || codexRoot != nil else { return [] }
         ensureLoaded()
         let fmt = LocalUsageReader.localDayFormatter()
         let roots = codexRoots ?? codexRoot.map { [$0] } ?? LocalUsageReader.codexSessionRoots(
@@ -212,6 +223,7 @@ actor LocalUsageCache {
     }
 
     func geminiEntries(modifiedSince: Date) -> [LocalUsageReader.Entry] {
+        guard scansDefaultRoots || geminiRoots != nil || geminiRoot != nil else { return [] }
         ensureLoaded()
         let fmt = LocalUsageReader.localDayFormatter()
         let roots = geminiRoots ?? geminiRoot.map { [$0] } ?? LocalUsageReader.geminiScanRoots(
@@ -228,6 +240,7 @@ actor LocalUsageCache {
     }
 
     func grokEntries(modifiedSince: Date) -> [LocalUsageReader.Entry] {
+        guard scansDefaultRoots || grokRoots != nil || grokRoot != nil else { return [] }
         ensureLoaded()
         let fmt = LocalUsageReader.localDayFormatter()
         // updates.jsonl 만, 그리고 서브에이전트 세션은 제외한다(부모 턴에 이미 포함). 이 판정은
@@ -249,6 +262,7 @@ actor LocalUsageCache {
     }
 
     func piEntries(modifiedSince: Date) -> [LocalUsageReader.Entry] {
+        guard scansDefaultRoots || piRoots != nil else { return [] }
         ensureLoaded()
         let fmt = LocalUsageReader.localDayFormatter()
         let roots = piRoots ?? CustomScanRoots.union(
@@ -265,6 +279,7 @@ actor LocalUsageCache {
     }
 
     func ompEntries(modifiedSince: Date) -> [LocalUsageReader.Entry] {
+        guard scansDefaultRoots || ompRoots != nil else { return [] }
         ensureLoaded()
         let fmt = LocalUsageReader.localDayFormatter()
         let roots = ompRoots ?? CustomScanRoots.union(
@@ -414,10 +429,20 @@ actor LocalUsageCache {
 
     // MARK: 영속화
 
+    /// Number of loaded blobs, used to observe the read gate: if a default-path cache read the user's
+    /// real file, hundreds of their blobs would show up next to a single fixture.
+    var cachedBlobCount: Int {
+        ensureLoaded()
+        return claudeCache.count + codexCache.count + geminiCache.count
+            + grokCache.count + piCache.count + ompCache.count
+    }
+
     private func ensureLoaded() {
         guard !loaded else { return }
         loaded = true
-        guard let raw = try? Data(contentsOf: fileURL) else { return }
+        // Reads are gated too: a test that read the user's real cache would assert on fixtures mixed
+        // with live data.
+        guard persistsToDisk, let raw = try? Data(contentsOf: fileURL) else { return }
         // zlib 압축 스냅샷(현행) → 실패 시 평문 JSON(구버전 캐시) 폴백
         let data = (try? (raw as NSData).decompressed(using: .zlib) as Data) ?? raw
         guard let snap = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
@@ -471,6 +496,7 @@ actor LocalUsageCache {
     /// 변경이 있으면 디스크에 저장(최소 60초 간격으로 throttle — 잦은 쓰기 방지).
     private func saveIfNeeded() {
         guard dirty else { return }
+        guard persistsToDisk else { dirty = false; return }
         if let last = lastSave, now().timeIntervalSince(last) < 60 { return }
         prune()
         let snap = Snapshot(
