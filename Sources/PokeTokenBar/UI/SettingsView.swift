@@ -91,10 +91,8 @@ struct SettingsView: View {
                     if startExpanded {
                         advancedExpanded = true
                         Task { @MainActor in
-                            try? await Task.sleep(nanoseconds: 80_000_000)
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                proxy.scrollTo("sessionKeyEntry", anchor: .center)
-                            }
+                            await Task.yield()
+                            proxy.scrollTo("sessionKeyEntry", anchor: .center)
                             sessionKeyFocused = true
                         }
                     }

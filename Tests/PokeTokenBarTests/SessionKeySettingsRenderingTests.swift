@@ -39,7 +39,8 @@ final class SessionKeySettingsRenderingTests: XCTestCase {
         let views = descendants(of: host.view)
         let secure = try XCTUnwrap(views.compactMap { $0 as? NSSecureTextField }.first)
         let rect = secure.convert(secure.bounds, to: host.view)
-        XCTAssertTrue(host.view.bounds.contains(rect), "session key entry must be visible after scrolling")
+        XCTAssertTrue(host.view.bounds.contains(rect),
+                      "session key entry must be visible after scrolling: rect=\(rect) bounds=\(host.view.bounds)")
         // Hosted CI renders the layout but does not grant this XCTest window an editor.
         // Verify keyboard focus on an interactive Mac with PTB_VERIFY_KEYBOARD_FOCUS=1.
         if ProcessInfo.processInfo.environment["PTB_VERIFY_KEYBOARD_FOCUS"] == "1" {
