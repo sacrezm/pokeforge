@@ -11,18 +11,26 @@ signing, verification and publication procedure. Run it from a clean, pushed
 ```bash
 CODESIGN_IDENTITY="Your existing signing identity" \
 PTB_SPARKLE_KEY_REF="op://AI/PokeTokenBar Sparkle update signing/password" \
+PTB_NOTES_FILE="docs/reference/releases/v<version>.md" \
+PTB_CONTRIBUTORS_FILE="docs/reference/releases/v<version>.contributors.txt" \
 ./scripts/release.sh <major.minor.patch>
 ```
 
-Choose a version higher than the current release. The script runs the test gate,
-builds a universal app, verifies its signature, and publishes `PokeForge-v<version>.zip`
-with a signed `appcast.xml`. It does not install the app on the release machine.
+Choose a version higher than the current release and align the plugin's version.
+The script checks the notes and verified contributor roster, runs the native and
+plugin tests, builds a universal app and verifies its signature. It publishes
+`PokeForge-v<version>.zip`, `PokeForge-Codex-v<version>.zip`, a signed `appcast.xml`
+and `SHA256SUMS.txt`. It does not install the app on the release machine.
 
 Before publishing:
 
 - Update the README and translations to describe what actually ships. Keep future
   trainer battles and unfinished progression work labelled as planned.
 - Review release notes and screenshots for accuracy, including fork attribution.
+  Use sandbox data in new public screenshots. Include all verified contributors
+  since the previous public release, including merged upstream contributions.
+- Commit the plugin's built `dist` files, icons and bundled dependency licenses;
+  the release gate checks the extracted archive without its own `node_modules`.
 - Run the isolated updater smoke test when changing updater or packaging behavior.
 - Keep the existing signing certificate, Sparkle public key, bundle identifier,
   save format and trainer credentials. Rebranding must not reset a collection.

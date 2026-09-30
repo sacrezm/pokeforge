@@ -10,6 +10,7 @@ build/
 
 # macOS
 .DS_Store
+__pycache__/
 *.xcuserstate
 
 # Signing material — never commit private keys / certs

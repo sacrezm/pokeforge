@@ -10,17 +10,23 @@
 
 ## 현재 제공
 
+- **Codex 플러그인:** 기존 PokéForge 저장 데이터를 그대로 사용하여 Codex 안에서 동료, 훈련, 컬렉션, 사용량, 가방과 상점을 엽니다. [설치 안내](plugins/pokeforge/README.md).
+- **훈련:** 레벨 5–100, XP, EV, Catch / Train / Balanced 모드를 지원합니다.
 - **사용량 추적:** Claude Code, Codex, Gemini CLI, Antigravity, OpenCode, Hermes Agent, Cursor, Grok CLI, Copilot CLI, Kiro CLI, Pi Agent, omp의 로컬 사용량 기록을 읽습니다. 오늘·주·월 합계와 지원되는 공식 한도를 보여 줍니다.
 - **부화와 진화:** 코딩 사용량으로 알을 부화하고 실제 진화 계보를 따라 동료를 키운 뒤, 완성한 포켓몬을 컬렉션에 졸업시킵니다. 부화에는 희귀도·성격·이로치가 적용됩니다.
 - **상점:** 사용한 토큰을 이상한 사탕, 민트, 이로치 부적, 새 알 또는 고급·희귀 보증 알로 바꿉니다.
 - **컬렉션:** 현재 보유 포켓몬, 종 단위 도감, 개체별 포획 로그를 확인합니다. 플로팅 펫과 메뉴바 대표 포켓몬도 선택할 수 있습니다.
 - **교환:** 트레이너를 만들고 친구 코드로 친구를 추가한 뒤 공유 릴레이를 통해 완성한 포켓몬 한 마리를 교환합니다. 양쪽이 확인하며 원래 트레이너 정보가 보존됩니다. 알과 현재 키우는 동료는 교환할 수 없습니다.
 
-## 개발 중인 방향
+## 앞으로
 
-포켓몬 레벨, XP·EV, 포획 모드와 훈련 모드, 장래의 트레이너 배틀을 개발 중입니다. **로드맵 항목이며 현재 빌드에는 어느 것도 제공되지 않습니다.** 현재 게임 루프는 토큰 기반 부화·진화·사용량 추적·상점·컬렉션·선택적 교환입니다.
+레벨, XP·EV, 훈련 모드와 포획 볼은 이번 릴리스에 포함됩니다. 트레이너 배틀과 탐험은 아직 계획 단계입니다.
 
 ## 스크린샷
+
+격리된 샌드박스 데이터를 사용하는 현재 Codex 플러그인 화면입니다.
+
+![PokéForge Codex](assets/screenshot-codex.jpg)
 
 아래 이미지는 PokéForge로 공개 리브랜딩하기 전의 출시 UI입니다. 일부 표시는 원래 이름을 사용합니다.
 
@@ -37,7 +43,7 @@
 
 [PokéForge 릴리스](https://github.com/sacrezm/pokeforge/releases)에서 앱 ZIP을 내려받으세요. GitHub가 자동으로 만드는 소스 코드 ZIP이 아니라 빌드된 앱 ZIP을 사용하고, 압축을 푼 앱을 `/Applications`로 옮깁니다.
 
-이름 변경 작업에서는 새 바이너리를 공개하지 않습니다. 현재 최신 다운로드는 `PokeTokenBar-v2.6.3.zip`이며 안에 `PokeTokenBar.app`이 들어 있습니다. 첫 브랜드 릴리스부터는 `PokeForge-vX.Y.Z.zip`과 `PokeForge.app`을 사용합니다.
+`PokeForge-v<VERSION>.zip`에는 macOS 14 이상, Apple Silicon·Intel용 `PokeForge.app`이 들어 있습니다. Codex 플러그인은 Node.js 24 이상이 필요하며, 별도의 플러그인 ZIP도 제공합니다.
 
 v2.6.3을 포함한 모든 PokéForge 이전 빌드는 예전 `sacrezm/PokeTokenBar`의 정확한 `html_url`만 허용합니다. GitHub 이름 변경의 리디렉션은 새 canonical URL을 돌려주므로, 이전 빌드는 릴리스를 찾지 못합니다. **첫 PokéForge 릴리스는 한 번 수동으로 설치해야 합니다.**
 

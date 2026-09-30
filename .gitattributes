@@ -1,0 +1,2 @@
+# Reproducible bundles include dependency template literals with intentional whitespace.
+plugins/pokeforge/dist/* linguist-generated=true whitespace=-blank-at-eol

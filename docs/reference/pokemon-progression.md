@@ -1,4 +1,4 @@
-# Pokémon progression — local playtest
+# Pokémon progression
 
 This is a custom, token-driven fan-game loop, not a simulation of the main-series
 capture or evolution formulas. Trainer battles and exploration are not implemented.
@@ -29,7 +29,7 @@ Collection details prioritize level progress, with provenance under **History & 
 
 The wallet still earns actual observed usage once. Switching modes does not replay
 past usage, and spending tokens never rewinds experience or collection progress.
-No artificial AI calls or paid-token consumption are necessary to playtest.
+No artificial AI calls or additional paid-token consumption are necessary to play.
 
 ## Levels and EVs
 
@@ -41,8 +41,8 @@ No artificial AI calls or paid-token consumption are necessary to playtest.
   the chosen individual XP and one focused EV per 100,000 training tokens.
 - Six EV stats: HP, Attack, Defense, Special Attack, Special Defense and Speed.
   Each stat caps at 252; the total caps at 510. EVs are saved investment for future
-  battles, not invented combat stats. No IVs, moves, battle engine or multiplayer
-  battle balance are included in this slice.
+  battles. Native individual profiles also show inherited upstream IV, gender,
+  ability and move data. No battle engine or multiplayer battle balance is implemented.
 - Rare Candy adds exactly one level to the selected trainee, without EVs or
   catching progress. It cannot be spent at level 100.
 - Evolution still follows the app's catching meter. Raising a level while training
@@ -50,7 +50,7 @@ No artificial AI calls or paid-token consumption are necessary to playtest.
 
 ## Faster collecting
 
-| Cost | Before | This playtest |
+| Cost | Before | Current |
 | --- | ---: | ---: |
 | Egg incubation | 5M | 1M |
 | Common completion | 750M | 75M |
@@ -120,7 +120,7 @@ Run `./scripts/preview-gameplay.sh`. Preview progress persists in
 It uses a separate app identity and never starts usage scanning, trading, Keychain,
 login-item migration or updater checks. The installed stable app/save is untouched.
 
-## Verification (2026-09-04)
+## Historical playtest verification (2026-09-04)
 
 - Five workers contributed progression design, ball economy/critique, trading
   integration, native UI, and regression-test updates; the root integrated/reviewed.

@@ -11,17 +11,19 @@ source provenance.
 | Surface | Name |
 | --- | --- |
 | App display name | PokéForge |
+| Codex plugin display name / identifier | PokéForge / `pokeforge` |
+| Codex MCP tools | `open_pokeforge`, `get_pokeforge`, `update_pokeforge` |
 | Repository | `sacrezm/pokeforge` |
 | App bundle and executable | `PokeForge.app`, `PokeForge` |
 | Swift package / executable product | `PokeForge` |
 | New release archives | `PokeForge-v<version>.zip` |
+| Codex plugin archive | `PokeForge-Codex-v<version>.zip` |
 | Support | Issues in `sacrezm/pokeforge` |
 
 ## Upgrade from PokeTokenBar
 
-The repository rename does not publish a new binary. Existing release ZIPs still
-contain `PokeTokenBar.app`; use the release notes to identify the first branded
-`PokeForge` archive, or build the current source.
+Older release ZIPs may still contain `PokeTokenBar.app`. Current PokéForge archives
+contain `PokeForge.app`; follow the installation instructions for that release.
 
 Previously released builds, including 2.6.3, require release metadata to contain
 the exact old repository URL. GitHub redirects the old URL, but returns the new

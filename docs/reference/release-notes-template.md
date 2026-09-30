@@ -23,6 +23,13 @@ When there are none, write exactly: No external contributors in this release. --
 
 ---
 
-**Install:** `brew install --cask chattymin/tap/poke-token-bar` — or download `PokeTokenBar.zip` below.
+**Install:** Download `PokeForge-v<VERSION>.zip` below and move `PokeForge.app` to `/Applications`.
 
-**Upgrade:** `brew upgrade --cask poke-token-bar`
+**Codex plugin:** Install Node 24+, then run:
+
+```sh
+codex plugin marketplace add sacrezm/pokeforge
+codex plugin add pokeforge@pokeforge
+```
+
+**Upgrade:** Use PokéForge’s **Update & Restart**. Pre-PokéForge installations need one manual update. Existing saves and trainer credentials are retained.

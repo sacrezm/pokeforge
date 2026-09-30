@@ -1,0 +1,10 @@
+{
+  "name": "pokeforge",
+  "interface": { "displayName": "PokéForge" },
+  "plugins": [{
+    "name": "pokeforge",
+    "source": { "source": "local", "path": "./plugins/pokeforge" },
+    "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+    "category": "Productivity"
+  }]
+}

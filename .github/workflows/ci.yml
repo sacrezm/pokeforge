@@ -12,6 +12,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/pokeforge
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: plugins/pokeforge/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Verify distributable matches source
+        run: git diff --exit-code -- dist
+
   build-test:
     name: build-test
     # macos-15 ships Xcode 16 / Swift 6, which Package.swift requires

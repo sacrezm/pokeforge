@@ -175,16 +175,25 @@ final class CompanionStore {
         if let id = state.trainingTargetID { return candidates.first(where: { $0.id == id }) }
         return candidates.first(where: isActiveDexEntry) ?? candidates.first
     }
-    func setTrainingMode(_ mode: TrainingMode) {
+    @discardableResult
+    func setTrainingMode(_ mode: TrainingMode) -> Bool {
+        let before = state
         if mode != .catching, state.trainingTargetID == nil { state.trainingTargetID = trainingPokemon?.id }
         state.trainingMode = mode
-        save()
+        return persistMutation(from: before)
     }
-    func setTrainingFocus(_ focus: PokemonStat) { state.trainingFocus = focus; save() }
-    func setTrainingTarget(_ id: String?) {
-        guard id == nil || trainingCandidates.contains(where: { $0.id == id }) else { return }
+    @discardableResult
+    func setTrainingFocus(_ focus: PokemonStat) -> Bool {
+        let before = state
+        state.trainingFocus = focus
+        return persistMutation(from: before)
+    }
+    @discardableResult
+    func setTrainingTarget(_ id: String?) -> Bool {
+        guard id == nil || trainingCandidates.contains(where: { $0.id == id }) else { return false }
+        let before = state
         state.trainingTargetID = id
-        save()
+        return persistMutation(from: before)
     }
 
     /// One usage delta, one allocation. No target means all tokens catch instead of disappearing.
@@ -1275,14 +1284,15 @@ final class CompanionStore {
     @discardableResult
     func useMint() -> PokemonNature? {
         guard canUseMint, state.active != nil else { return nil }
+        let before = state
         let cur = state.active!.nature
         let pool = PokemonNature.allCases.filter { $0 != cur }   // cur=nil(구버전 개체)이면 25종 전체
         let new = pool[Int(rng.next() % UInt64(pool.count))]
         state.active!.nature = new
         state.inventory[ItemKind.mint.rawValue] = itemCount(.mint) - 1
+        guard persistMutation(from: before) else { return nil }
         mintFeedbackNature = new
         mintFeedbackSeq += 1
-        save()
         return new
     }
 
@@ -1347,10 +1357,10 @@ final class CompanionStore {
     func buy(_ kind: ItemKind) -> Bool {
         guard let price = price(of: kind), availableTokens >= price else { return false }
         if kind.isPassive && itemCount(kind) > 0 { return false }   // 보유형 중복 구매 방지(방어)
+        let before = state
         state.spentTokens += price
         state.inventory[kind.rawValue, default: 0] += 1
-        save()
-        return true
+        return persistMutation(from: before)
     }
 
     // 사탕 전용 래퍼 — 기존 호출부/테스트 호환.

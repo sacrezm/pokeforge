@@ -9,6 +9,7 @@ PORT=18763
 if lsof -iTCP:$PORT -sTCP:LISTEN -t >/dev/null; then
     echo "Test port $PORT is busy; no process was stopped" >&2; exit 1
 fi
+mkdir -p Scratch
 RUN_DIR="$(mktemp -d "$PWD/Scratch/updater-smoke-XXXXXXXX")"
 echo "Updater smoke artifacts: $RUN_DIR"
 FRAMEWORK_ROOT="$PWD/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64"

@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var store: UsageStore!
     private var companion: CompanionStore!
     private var trading: TradingFeature!
+    private var pluginBridge: PluginBridge?
     private let tradingNotifications = TradingNotifications()
     private var updater: UpdateChecker!
     private var floatingPet: FloatingPetController!
@@ -68,6 +69,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Maintenance must run before the duplicate-instance exit, without opening any stores.
+        if CommandLine.arguments.contains("--refresh-login-item") {
+            Task { @MainActor in
+                do {
+                    let refreshed = try await LoginItem.refreshRegistrationIfEnabled()
+                    print("{\"loginItemRefreshed\":\(refreshed)}")
+                } catch { fputs("\(error)\n", stderr); exit(1) }
+                NSApp.terminate(nil)
+            }
+            return
+        }
         if Self.isGameplayPreviewProcess {
             do { try GameplayPreview.start() }
             catch { print("Could not open isolated gameplay preview: \(error)"); NSApp.terminate(nil) }
@@ -148,6 +160,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.behavior = .transient
         popover.delegate = self   // didShow: outside-click monitor; didClose: 호스팅 해제 + 모니터 제거
 
+        pluginBridge = PluginBridge(companion: companion, usage: store, trading: trading) { [weak self] page in
+            guard let self else { return }
+            self.openPopover()
+            self.navigation.showSettings = page == "settings"
+            if page == "trade" { self.navigation.tab = .trade }
+        }
+        do { try pluginBridge?.start() }
+        catch { AppLog.write("plugin bridge: \(error)") }
         observeStore()
         observeTradingActivity()
         observeCompanionSprite()

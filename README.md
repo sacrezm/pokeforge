@@ -24,6 +24,9 @@ PokéForge turns the AI tokens you already use into progress for your Pokémon. 
 
 ## What ships today
 
+- **Codex plugin.** Companion progress, training, owned collection, usage history, and the bag and shop inside Codex. The plugin shares the native app’s save. [Install the plugin](#codex-plugin).
+- **Training.** Persistent levels 5–100, XP, capped EV stats, and Catch / Train / Balanced modes for locally raised and currently owned traded Pokémon.
+
 - **Usage tracking.** Read local usage records from Claude Code, Codex, Gemini CLI, Antigravity, OpenCode, Hermes Agent, Cursor, Grok CLI, Copilot CLI, Kiro CLI, Pi Agent, and omp. See today, week, and month totals, reported cost where available, and supported official limit windows.
 - **Hatching and evolution.** Coding usage incubates an egg, grows a companion through its real evolution line, and graduates completed Pokémon into your collection. Hatches can have rarity, nature, and shiny status.
 - **Shop.** Turn used tokens into Rare Candy, Mints, a Shiny Charm, or a fresh egg with optional Uncommon or Rare guarantees.
@@ -36,6 +39,8 @@ PokeTokenBar provides the original menu-bar companion, usage tracking, hatching,
 
 | Addition | What it brings |
 | --- | --- |
+| Codex extension | A local dashboard connected to the same app, Pokémon and usage. |
+| Training and progression | Individual XP, levels, EVs and Catch / Train / Balanced modes. |
 | Friends and remote trading | Friend codes, mutually confirmed trades, Original Trainer records, and supported trade evolutions. |
 | Owned collection | Individual Pokémon ownership, received Pokémon, and detail pages alongside the historical Pokédex and catch log. |
 | Hatch preferences | Choose which of Gen 1–5 can appear in future hatches. |
@@ -43,19 +48,21 @@ PokeTokenBar provides the original menu-bar companion, usage tracking, hatching,
 
 The original author and contributors retain credit for the foundation. Fork-specific issues and contributions belong here.
 
-## Where we’re going
+## Gameplay and future work
 
-**Available on `main` for local playtesting:** Pokémon levels 5–100, XP, six capped EV stats, Catch / Train / Balanced modes, a faster collection cycle, and affordable optional catching balls. Training supports locally raised and currently owned traded Pokémon. See [the gameplay rules](docs/reference/pokemon-progression.md).
+Levels, XP, EVs, training modes, and catching balls now ship in this release.
+See [the gameplay rules](docs/reference/pokemon-progression.md).
+Trainer battles and exploration remain future milestones.
 
-Run `./scripts/preview-gameplay.sh` for a native sandbox with simulated-token buttons. It uses a separate app identity and save folder, never replaces the installed app, and does not scan real usage or connect to the trading relay.
-
-**Later:** Pokémon battles against other trainers, giving the team you have raised a new purpose.
-
-The progression playtest is not included in the latest published release yet. Trading works today; battles and exploration remain future milestones.
+For local testing, `./scripts/preview-gameplay.sh` opens a sandbox with simulated
+tokens, a separate app identity and save folder, and no real usage or trading.
 
 ## Screenshots
 
-A look at the companion, shop, and Pokédex. Screenshots are from before the PokéForge rebrand, so some labels still use the original name.
+The current Codex dashboard below uses isolated sandbox data. The native app
+screenshots that follow are from before the rebrand and retain some original labels.
+
+![PokéForge Codex dashboard with sandbox Pokémon](assets/screenshot-codex.jpg)
 
 <p align="center">
   <img src="assets/screenshot-home.gif" width="360" alt="Pre-rebrand home view with companion and usage totals">
@@ -70,9 +77,26 @@ A look at the companion, shop, and Pokédex. Screenshots are from before the Pok
 
 Download app archives from the [PokéForge releases](https://github.com/sacrezm/pokeforge/releases). Use the built app ZIP, not GitHub's automatically generated source archive. Unzip it and move the app inside to `/Applications`.
 
-This rename does not publish a new binary. The latest existing download remains `PokeTokenBar-v2.6.3.zip` and contains `PokeTokenBar.app`. The first branded release will be `PokeForge-vX.Y.Z.zip`, containing `PokeForge.app`.
+Release archives are named `PokeForge-v<VERSION>.zip` and contain `PokeForge.app`. They support macOS 14+ on Apple Silicon and Intel.
 
 Releases use a stable self-signed certificate and are not Apple-notarized. If macOS blocks the first launch, use its **Privacy & Security → Open Anyway** flow for the app you downloaded from this repository.
+
+### Codex plugin
+
+Install and run the current PokéForge app, install [Node.js 24+](https://nodejs.org/en/download),
+then run:
+
+```sh
+codex plugin marketplace add sacrezm/pokeforge
+codex plugin add pokeforge@pokeforge
+```
+
+Start a new Codex chat and ask **Open PokéForge**. Your existing Pokémon appear
+without importing or copying saves. A supported Codex desktop client is required.
+The plugin runs locally and is not available in Codex Cloud or on Windows/Linux.
+
+The release also includes `PokeForge-Codex-v<VERSION>.zip` for installation from
+an extracted local marketplace. See [plugin installation, updates and troubleshooting](plugins/pokeforge/README.md).
 
 ### Moving from PokeTokenBar
 

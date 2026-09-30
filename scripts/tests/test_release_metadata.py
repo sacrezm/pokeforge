@@ -30,9 +30,12 @@ Thank you all.
 
 ---
 
-**Install:** `brew install --cask chattymin/tap/poke-token-bar` — or download `PokeTokenBar.zip` below.
+**Install:** Download `PokeForge-v2.7.0.zip`.
 
-**Upgrade:** `brew upgrade --cask poke-token-bar`
+`codex plugin marketplace add sacrezm/pokeforge`
+`codex plugin add pokeforge@pokeforge`
+
+**Upgrade:** Use Update & Restart in PokéForge.
 """
 
 
@@ -62,7 +65,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             self.check()
 
     def test_all_sections_and_install_instructions_are_required(self):
-        for value in ("## New", "## Fixed", "## Other", "## Contributors", "brew upgrade --cask poke-token-bar"):
+        for value in ("## New", "## Fixed", "## Other", "## Contributors", "**Upgrade:**", "codex plugin add pokeforge@pokeforge", "PokeForge-v2.7.0.zip"):
             with self.subTest(value=value):
                 self.notes.write_text(NOTES.replace(value, "removed"))
                 with self.assertRaises(ValueError):
@@ -115,35 +118,33 @@ class ReleaseMetadataTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             metadata.commit_message("2.5.4", str(authors))
 
-    def test_release_stops_before_side_effects_when_notes_are_missing(self):
-        # Run the real shell entry point inside a disposable fixture. No git writes,
-        # network, app build, signing, or installation commands are reachable.
+    def test_upstream_install_commands_are_rejected(self):
+        self.notes.write_text(NOTES + "\nbrew upgrade --cask poke-token-bar\n")
+        with self.assertRaisesRegex(ValueError, "Upstream Homebrew"):
+            self.check()
+
+    def test_release_checks_notes_before_git_or_build(self):
         scripts = self.root / "scripts"
         scripts.mkdir()
         for name in ("release.sh", "release-metadata.py"):
             (scripts / name).write_text((ROOT / "scripts" / name).read_text())
-        (scripts / "build-app.sh").write_text('VERSION="2.5.3"\n')
-        marker = self.root / "test-gate-reached"
-        gate = scripts / "test-gate.sh"
-        gate.write_text('#!/bin/sh\ntouch test-gate-reached\nexit 1\n')
-        gate.chmod(0o755)
         commands = self.root / "bin"
         commands.mkdir()
+        marker = self.root / "git-reached"
         git = commands / "git"
-        git.write_text('#!/bin/sh\nif [ "$1" = rev-parse ]; then echo main; else exit 99; fi\n')
+        git.write_text('#!/bin/sh\ntouch git-reached\nexit 99\n')
         git.chmod(0o755)
         env = {k: v for k, v in os.environ.items() if not k.startswith("PTB_")}
         env["PATH"] = str(commands) + os.pathsep + env["PATH"]
-        command = ["bash", str(scripts / "release.sh"), "2.5.4"]
+        command = ["bash", str(scripts / "release.sh"), "2.7.0"]
         missing = subprocess.run(command, env=env, capture_output=True, text=True)
         self.assertNotEqual(missing.returncode, 0)
         self.assertIn("PTB_NOTES_FILE", missing.stderr)
         self.assertFalse(marker.exists())
         env.update(PTB_NOTES_FILE=str(self.notes), PTB_CONTRIBUTORS_FILE=str(self.roster))
         valid = subprocess.run(command, env=env, capture_output=True, text=True)
-        self.assertNotEqual(valid.returncode, 0, "Fixture intentionally stops at test-gate")
-        self.assertTrue(marker.exists())
-        self.assertEqual((scripts / "build-app.sh").read_text(), 'VERSION="2.5.3"\n')
+        self.assertNotEqual(valid.returncode, 0)
+        self.assertTrue(marker.exists(), valid.stderr)
 
 
 if __name__ == "__main__":

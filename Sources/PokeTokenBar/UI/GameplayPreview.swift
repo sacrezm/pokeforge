@@ -6,10 +6,10 @@ import SwiftUI
 @MainActor
 enum GameplayPreview {
     private static var window: NSWindow?
+    private static var pluginBridge: PluginBridge?
 
     static func start() throws {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let directory = support.appendingPathComponent("PokeTokenBar Gameplay Preview", isDirectory: true)
+        let directory = AppStatePaths.directory(defaultName: "PokeTokenBar Gameplay Preview")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent("companion-state.json")
         if !FileManager.default.fileExists(atPath: url.path) {
@@ -27,6 +27,8 @@ enum GameplayPreview {
         }
         let store = CompanionStore(provider: PreviewPokemonProvider(), fileURL: url,
                                    dittoDisguiseRollingEnabled: false)
+        pluginBridge = PluginBridge(companion: store, directory: directory, sandbox: true)
+        try pluginBridge?.start()
         let content = GameplayPreviewView(store: store)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 660),
                               styleMask: [.titled, .closable, .miniaturizable],

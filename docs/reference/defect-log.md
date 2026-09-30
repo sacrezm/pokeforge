@@ -11,6 +11,25 @@ read_when:
 
 # 결함 대응 축적 규칙
 
+## Codex plugin IPC and persistence (2026-09-30)
+
+- Native bridge clients must clear inherited `O_NONBLOCK` before bounded blocking
+  reads. An immediate request hid the defect; the real browser connected before
+  sending and the bridge closed early. The regression test delays and fragments
+  its request; removing the flag reset makes that test fail with EPIPE.
+- A second-instance liveness probe connects and closes without a request. Do not
+  send an error reply to a disconnected peer. Install `SO_NOSIGPIPE` on the listener
+  as well as clients, and accept directly on the main queue before a canceled
+  listener descriptor can be reused. An async probe test drains this path before
+  teardown; the full gate previously died on SIGPIPE just after the bridge suite.
+- Training settings, item purchases and mints must share the existing
+  `persistMutation` rollback behavior. Previously they ignored `save()` failure,
+  which an IPC caller could misreport as success. Tests replace the save file with
+  a directory and verify restored inventory, nature/settings and absent feedback.
+- Browser preview requests require the loopback Host and exact Origin. The HTTP
+  regression uses `http.request` for a forged Host: Node fetch normalizes that
+  header, so a fetch-only test would not exercise the intended input.
+
 ## Gameplay preview executable after product rename (2026-09-04)
 
 - The PokeForge rename changed the Swift product binary and app identity, but the
@@ -981,6 +1000,28 @@ read_when:
   않는다"는 트리거 명제를 따로 둔다** — 이게 없으면 원본이 애초에 정사각인 케이스로도 전부 통과한다.
 
 ## 프로세스 제어·업데이트
+
+- **Test the distributed plugin, not a developer symlink.** The first local plugin
+  worked because its ignored `dist/` existed only on the author's Mac; a Git
+  marketplace download would not contain its executable. Ship the bundled files,
+  check their reproducibility in CI, and run the MCP contract against the extracted
+  release ZIP without `node_modules`. The contract checks the package version,
+  resource, tools, icons and license notices. Injecting a missing packaged icon
+  must fail this check. Release notes must name this fork's app and plugin install
+  commands; the inherited upstream Homebrew instructions install a different app.
+  `test_release_metadata.py` rejects those commands before release side effects.
+
+- **Stop the old process before refreshing an in-place app update's login item.**
+  The new signed PokéForge ran directly, but launchd rejected it with a stale LWCR
+  (`OS_REASON_CODESIGNING`, then exit 78). The old and new designated requirements
+  matched. Unregister/register while the old app was still running reproduced the
+  failure; stopping that process and refreshing from the new installed bundle
+  restored normal launchd ownership and the live plugin connection. The
+  `--refresh-login-item` maintenance path runs before duplicate-instance detection,
+  never opens stores, and preserves login opt-out. Verify the actual running
+  PID with `launchctl print gui/$(id -u)/io.github.chattymin.poketokenbar.login`
+  and open the plugin to confirm that the native snapshot is available;
+  successful registration alone is not proof of a successful launch. (2026-09-30.)
 
 - **Exercise the updater, not just discovery and archive signatures.** v2.6.2
   required signed feeds but omitted `SUVerifyUpdateBeforeExtraction`, so Sparkle

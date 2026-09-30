@@ -21,9 +21,13 @@ def check_notes(notes_path, contributors_path):
     for name in ("New", "Fixed", "Other", "Contributors"):
         if not sections.get(name):
             raise ValueError(f"Release notes need a nonempty '## {name}' section")
-    for command in ("brew install --cask chattymin/tap/poke-token-bar", "brew upgrade --cask poke-token-bar"):
-        if command not in visible:
-            raise ValueError(f"Release notes are missing: {command}")
+    for instruction in ("**Install:**", "**Upgrade:**", "codex plugin marketplace add sacrezm/pokeforge", "codex plugin add pokeforge@pokeforge"):
+        if instruction not in visible:
+            raise ValueError(f"Release notes are missing: {instruction}")
+    if not re.search(r"PokeForge-v\d+\.\d+\.\d+\.zip", visible):
+        raise ValueError("Release notes must name the PokéForge app archive")
+    if "brew install --cask chattymin/" in visible or "brew upgrade --cask poke-token-bar" in visible:
+        raise ValueError("Upstream Homebrew commands do not install this fork")
 
     roster = read_file(contributors_path, "PTB_CONTRIBUTORS_FILE")
     expected = set()

@@ -12,7 +12,9 @@ Mac that holds the existing signing identity:
 ```bash
 CODESIGN_IDENTITY="Your existing signing identity" \
 PTB_SPARKLE_KEY_REF="op://AI/PokeTokenBar Sparkle update signing/password" \
-./scripts/release.sh 2.6.2
+PTB_NOTES_FILE="docs/reference/releases/v2.7.0.md" \
+PTB_CONTRIBUTORS_FILE="docs/reference/releases/v2.7.0.contributors.txt" \
+./scripts/release.sh 2.7.0
 ```
 
 Replace the identity placeholder with the existing fork signing identity and the
@@ -20,15 +22,26 @@ example version with a higher major.minor.patch. Other release machines must
 securely have the **same certificate and private key**, not create a replacement
 with the same name. Never put private keys or certificates containing private keys in Git.
 
-The command checks the clean checkout and exact origin, runs the full test gate,
+Prepare the English notes and verified contributor roster from the previous public
+release first. Update the plugin version in its manifest, package metadata and
+MCP/UI entrypoints to match the release, run `npm ci && npm test` in
+`plugins/pokeforge`, and commit its `dist` output. Git marketplace installs use those
+bundles without running npm. Keep `.agents/plugins/marketplace.json` in the repository.
+
+The command validates the notes before any build or publication, checks the clean
+checkout and exact origin, runs the release-metadata tests, plugin tests and full native test gate,
 bumps the bundled version, builds a universal Apple Silicon + Intel app with the
 pinned Sparkle framework, verifies its stable signature, and packages a ZIP.
 It reads the Ed25519 signing seed directly from 1Password through a pipe and generates
 a signed `appcast.xml` pointing at that ZIP. Both feed and archive are authenticated
 by the public key in `scripts/sparkle-public-key.txt`; never replace that key casually.
 No private key is written to disk, committed, or stored in the macOS Keychain.
-It then commits/pushes only the version bump, creates a draft release containing
-both the ZIP and feed, and publishes it as Latest. It does
+It also packages `PokeForge-Codex-v<version>.zip` as a local plugin marketplace,
+extracts it into a clean directory and runs the MCP contract against the extracted
+server. It includes icons and dependency licenses, without developer dependencies
+or user data. `SHA256SUMS.txt` covers both archives.
+It then commits/pushes only the native version bump, creates a draft release containing
+both ZIPs, the feed and checksums, and publishes it as Latest. It does
 not install the build or interrupt the running app. A build/test failure does
 not publish. A failure after creating the draft leaves it unpublished: inspect
 the existing draft and attached ZIP before publishing or retrying.
@@ -70,8 +83,9 @@ This uses a localhost-only signed feed and a disposable app under `Scratch`, wit
 no user save or trading code. Both `SURequireSignedFeed` and
 `SUVerifyUpdateBeforeExtraction` must be enabled in the real bundle.
 
-- Confirm the release is public, not a draft/prerelease, with the app ZIP and signed `appcast.xml`.
+- Confirm the release is public, not a draft/prerelease, with both ZIPs, signed `appcast.xml` and `SHA256SUMS.txt`.
 - Check its version matches the app's CFBundleShortVersionString.
+- Download the published archives and verify their checksums; check the plugin from a fresh checkout or extracted archive.
 - On an older fork-channel build, use Settings → Updates → Check now.
 - Follow Update & Restart and confirm Sparkle downloads this fork's signed ZIP.
 - Check the version and retained collection on restart. Test install failures on a

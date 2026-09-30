@@ -1,0 +1,26 @@
+{
+  "name": "pokeforge",
+  "version": "2.7.0",
+  "description": "Pok\u00e9mon, training and local AI usage in Codex.",
+  "author": {
+    "name": "Mathias"
+  },
+  "interface": {
+    "displayName": "Pok\u00e9Forge",
+    "shortDescription": "Pok\u00e9mon and usage in Codex",
+    "logo": "./assets/icon.png",
+    "composerIcon": "./assets/icon.png",
+    "longDescription": "Your Pok\u00e9Forge companion, owned collection, training, usage history, items and Pok\u00e9 Balls in one Codex panel. Connects to the local Pok\u00e9Forge app.",
+    "developerName": "Mathias",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Open Pok\u00e9Forge."
+    ],
+    "brandColor": "#C63830"
+  },
+  "mcpServers": "./.mcp.json",
+  "repository": "https://github.com/sacrezm/pokeforge"
+}

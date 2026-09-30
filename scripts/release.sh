@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 REPO="sacrezm/pokeforge"
 VERSION="${1:?Usage: release.sh <major.minor.patch>}"
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid version"; exit 1; }
+python3 scripts/release-metadata.py check-notes "${PTB_NOTES_FILE:-}" "${PTB_CONTRIBUTORS_FILE:-}"
 [[ "$(git branch --show-current)" == "main" ]] || { echo "Run on main"; exit 1; }
 [[ -z "$(git status --porcelain)" ]] || { echo "Commit and push your changes first"; exit 1; }
 case "$(git remote get-url origin)" in
@@ -37,6 +38,10 @@ if gh release view "v$VERSION" --repo "$REPO" >/dev/null 2>&1; then
 fi
 
 echo "Testing and building v$VERSION. No app installation or save changes."
+python3 -m unittest discover -s scripts/tests -p 'test_release_metadata.py'
+npm --prefix plugins/pokeforge ci
+npm --prefix plugins/pokeforge test
+git diff --exit-code -- plugins/pokeforge/dist
 ./scripts/test-gate.sh
 # Only the version default is changed; a failed build leaves it uncommitted for inspection.
 perl -pi -e "s/PTB_VERSION:-[0-9.]+/PTB_VERSION:-$VERSION/" scripts/build-app.sh
@@ -49,6 +54,11 @@ lipo "$APP/Contents/MacOS/PokeForge" -verify_arch arm64 x86_64
 ZIP="build/PokeForge-v$VERSION.zip"
 [[ ! -e "$ZIP" ]] || { echo "$ZIP already exists; inspect it before retrying"; exit 1; }
 ditto -c -k --keepParent "$APP" "$ZIP"
+bash scripts/package-plugin.sh "$VERSION"
+PLUGIN_ZIP="build/PokeForge-Codex-v$VERSION.zip"
+PLUGIN_CHECK=$(mktemp -d "$PWD/build/plugin-install-XXXXXXXX")
+ditto -x -k "$PLUGIN_ZIP" "$PLUGIN_CHECK"
+(cd plugins/pokeforge && POKEFORGE_SERVER="$PLUGIN_CHECK/PokeForge-Codex-v$VERSION/plugins/pokeforge/dist/server.mjs" node --test test.mjs)
 
 # Publish a signed Sparkle feed beside the archive. Private keys never enter Git
 # or plaintext files. The private signing seed is read directly from 1Password.
@@ -59,12 +69,14 @@ ditto "$ZIP" "$FEED_DIR/$(basename "$ZIP")"
 APPCAST_ARGS=(--maximum-deltas 0 --download-url-prefix "https://github.com/$REPO/releases/download/v$VERSION/" "$FEED_DIR")
 op read "$PTB_SPARKLE_KEY_REF" | .build/artifacts/sparkle/Sparkle/bin/generate_appcast --ed-key-file - "${APPCAST_ARGS[@]}"
 [[ -s "$FEED_DIR/appcast.xml" ]] || { echo "Signed update feed missing"; exit 1; }
+CHECKSUMS="build/SHA256SUMS.txt"
+(cd build && shasum -a 256 "$(basename "$ZIP")" "$(basename "$PLUGIN_ZIP")") > "$CHECKSUMS"
 
 git add scripts/build-app.sh
 git commit -m "release: PokéForge v$VERSION"
 git push origin main
 # A draft prevents update alerts before the binary upload completes.
-gh release create "v$VERSION" "$ZIP" "$FEED_DIR/appcast.xml" --repo "$REPO" --target "$(git rev-parse HEAD)" \
-  --draft --title "PokéForge v$VERSION" --generate-notes
+gh release create "v$VERSION" "$ZIP" "$PLUGIN_ZIP" "$FEED_DIR/appcast.xml" "$CHECKSUMS" --repo "$REPO" --target "$(git rev-parse HEAD)" \
+  --draft --title "PokéForge v$VERSION" --notes-file "$PTB_NOTES_FILE"
 gh release edit "v$VERSION" --repo "$REPO" --draft=false --latest
 echo "Published https://github.com/$REPO/releases/tag/v$VERSION"
