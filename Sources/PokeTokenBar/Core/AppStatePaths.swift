@@ -3,16 +3,15 @@ import Foundation
 /// Application Support state directory for PokeTokenBar files.
 /// `PTB_STATE_DIR` overrides the default for development/QA isolation.
 enum AppStatePaths {
-    static func directory(defaultName: String = "PokeTokenBar") -> URL {
-        let override = (ProcessInfo.processInfo.environment["PTB_STATE_DIR"] ?? "")
+    static var overrideDirectory: URL? {
+        let path = (ProcessInfo.processInfo.environment["PTB_STATE_DIR"] ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let dir: URL
-        if !override.isEmpty {
-            dir = URL(fileURLWithPath: override, isDirectory: true)
-        } else {
-            dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return path.isEmpty ? nil : URL(fileURLWithPath: path, isDirectory: true)
+    }
+
+    static func directory(defaultName: String = "PokeTokenBar") -> URL {
+        let dir = overrideDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent(defaultName)
-        }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }

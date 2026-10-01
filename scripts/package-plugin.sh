@@ -9,7 +9,7 @@ ROOT="build/PokeForge-Codex-v$VERSION"
 [[ ! -e "$ROOT" && ! -e "$ROOT.zip" ]] || { echo "Package already exists; inspect it before retrying" >&2; exit 1; }
 mkdir -p "$ROOT/.agents/plugins" "$ROOT/plugins/pokeforge"
 cp .agents/plugins/marketplace.json "$ROOT/.agents/plugins/"
-for entry in .codex-plugin .mcp.json dist assets LICENSE README.md; do
+for entry in .codex-plugin .mcp.json dist runtime assets LICENSE README.md; do
     cp -R "plugins/pokeforge/$entry" "$ROOT/plugins/pokeforge/"
 done
 ditto -c -k --keepParent --norsrc "$ROOT" "$ROOT.zip"

@@ -29,6 +29,7 @@ enum GameplayPreview {
                                    dittoDisguiseRollingEnabled: false)
         pluginBridge = PluginBridge(companion: store, directory: directory, sandbox: true)
         try pluginBridge?.start()
+        if AppEnv.isPluginEngine { return }
         let content = GameplayPreviewView(store: store)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 420, height: 660),
                               styleMask: [.titled, .closable, .miniaturizable],

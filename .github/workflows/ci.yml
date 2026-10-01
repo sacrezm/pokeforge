@@ -49,6 +49,15 @@ jobs:
       - name: Test + coverage gate
         run: ./scripts/test-gate.sh
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Standalone plugin startup and recovery
+        working-directory: plugins/pokeforge
+        run: |
+          npm ci
+          node --test standalone.test.mjs
+
   secret-scan:
     name: secret-scan
     runs-on: ubuntu-latest

@@ -138,16 +138,16 @@
   "luxuryBall_hint": "One egg hatches at level 10, without extra EVs.",
   "ultraBall_hint": "4× rare-or-better hatch weight for one egg.",
   "ballHint": "Optional. Free eggs still hatch normally. Equipping an untouched egg consumes the ball; otherwise it is consumed when the next cycle starts.",
-  "nativeTrade": "Open trading in PokéForge",
-  "nativeSettings": "PokéForge settings",
+  "nativeTrade": "Trading",
+  "nativeSettings": "Settings",
   "nativeHint": "",
   "footer": "PokéForge · Unofficial Pokémon fan project.",
-  "toolOpen": "Open the PokéForge companion dashboard, owned collection, usage and bag. Requires the bridge-enabled local PokéForge app.",
+  "toolOpen": "Open the PokéForge companion dashboard, collection, training, usage and bag. Starts its bundled local engine automatically; no menu-bar app installation is needed.",
   "toolRead": "Read current Pokémon, ownership, training, inventory and usage from the running local PokéForge engine. Never edits saves.",
   "toolUpdate": "Perform an explicitly requested PokéForge action. Values: mode=catching/training/balanced; focus=hp/attack/defense/special-attack/special-defense/speed; target/candy=owned Pokémon ID; mint=active ID; buyItem/buyBall/queueBall=catalog ID; openNative=trade/settings. Purchases require expectedPrice from the latest snapshot. Candy, mint and purchases consume in-game resources: get user intent for that exact action first. Never automatically retry an uncertain outcome.",
   "toolResult": "PokéForge state loaded from the local PokéForge engine.",
   "errors": {
-    "engine_offline": "Open the PokéForge build supplied with this plugin, then try again.",
+    "engine_offline": "PokéForge is not connected yet. Try again in a moment.",
     "unsafe_socket": "The local bridge has unexpected permissions. Restart PokéForge to restore its private connection.",
     "invalid_response": "The engine returned an unreadable response. Restart PokéForge and try again.",
     "invalid_request": "That action is not supported or has expired. Refresh and try again.",
@@ -156,7 +156,11 @@
     "unavailable": "That action is no longer available. Check your balance, inventory and training target.",
     "save_failed": "The engine could not save the change. It restored the previous game state. Check disk space and folder permissions.",
     "host_connection": "The host connection is unavailable. Reopen the panel or use the local dashboard.",
-    "busy": "The engine is busy. Wait a moment, then refresh."
+    "busy": "The engine is busy. Wait a moment, then refresh.",
+    "engine_platform": "The PokéForge engine currently requires macOS 14 or newer.",
+    "engine_invalid": "The bundled engine could not be verified. Reinstall the PokéForge plugin. If this persists, clear its plugin-engines cache in Application Support/PokeTokenBar.",
+    "engine_start_failed": "PokéForge could not start its engine. Quit an older PokéForge or PokeTokenBar app and try again. macOS Privacy & Security may need to approve the signed engine."
   },
-  "todayPartial": "Tokens today · partial"
+  "todayPartial": "Tokens today · partial",
+  "standalone": "Running in Codex"
 }

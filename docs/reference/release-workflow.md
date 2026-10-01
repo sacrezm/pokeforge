@@ -26,7 +26,9 @@ Prepare the English notes and verified contributor roster from the previous publ
 release first. Update the plugin version in its manifest, package metadata and
 MCP/UI entrypoints to match the release, run `npm ci && npm test` in
 `plugins/pokeforge`, and commit its `dist` output. Git marketplace installs use those
-bundles without running npm. Keep `.agents/plugins/marketplace.json` in the repository.
+bundles without running npm. Build the signed universal engine and run
+`python3 scripts/package-plugin-engine.py`; commit `plugins/pokeforge/runtime/`
+so fresh Git installs are standalone too. Keep `.agents/plugins/marketplace.json` in the repository.
 
 The command validates the notes before any build or publication, checks the clean
 checkout and exact origin, runs the release-metadata tests, plugin tests and full native test gate,
@@ -38,9 +40,9 @@ by the public key in `scripts/sparkle-public-key.txt`; never replace that key ca
 No private key is written to disk, committed, or stored in the macOS Keychain.
 It also packages `PokeForge-Codex-v<version>.zip` as a local plugin marketplace,
 extracts it into a clean directory and runs the MCP contract against the extracted
-server. It includes icons and dependency licenses, without developer dependencies
+server, including standalone startup and restart recovery. It includes the signed engine, icons and dependency licenses, without developer dependencies
 or user data. `SHA256SUMS.txt` covers both archives.
-It then commits/pushes only the native version bump, creates a draft release containing
+It then commits/pushes the native version bump and bundled engine, creates a draft release containing
 both ZIPs, the feed and checksums, and publishes it as Latest. It does
 not install the build or interrupt the running app. A build/test failure does
 not publish. A failure after creating the draft leaves it unpublished: inspect

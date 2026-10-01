@@ -92,7 +92,7 @@ function render() {
     if (button.dataset.page === page) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
   });
   if (!state) return;
-  $('#connection').textContent = text(state.sandbox ? 'sandbox' : 'live'); $('#connection').className = 'connection live';
+  $('#connection').textContent = text(state.sandbox ? 'sandbox' : state.headless ? 'standalone' : 'live'); $('#connection').className = 'connection live';
   $('#main').innerHTML = ({ home, collection, activity, bag })[page]();
   if (page === 'collection') collectionGrid();
   document.querySelectorAll('[data-native]').forEach(button => { button.disabled = busy || state.sandbox; });

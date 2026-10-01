@@ -29,7 +29,7 @@ Before publishing:
 - Review release notes and screenshots for accuracy, including fork attribution.
   Use sandbox data in new public screenshots. Include all verified contributors
   since the previous public release, including merged upstream contributions.
-- Commit the plugin's built `dist` files, icons and bundled dependency licenses;
+- Commit the plugin's built `dist` files, signed `runtime` engine, icons and bundled dependency licenses;
   the release gate checks the extracted archive without its own `node_modules`.
 - Run the isolated updater smoke test when changing updater or packaging behavior.
 - Keep the existing signing certificate, Sparkle public key, bundle identifier,

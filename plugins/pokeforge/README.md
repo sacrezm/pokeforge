@@ -1,32 +1,31 @@
 # PokéForge for Codex
 
 Raise Pokémon, train your team, browse your collection, and track AI usage inside
-Codex. The plugin connects to the PokéForge app on your Mac and uses its existing
-save, including Pokémon received through trading.
+Codex. The plugin includes its own local engine: no menu-bar app installation or
+running toolbar is required. Existing PokéForge saves are used automatically,
+including Pokémon received through trading.
 
 ## Install
 
-Requires macOS 14+, a Codex desktop client with plugin extensions, Node.js 24+,
-and the PokéForge app from the same release or newer. The app must be running.
+Requires macOS 14+, a Codex desktop client with plugin extensions and Node.js 24+.
+The plugin includes a signed universal Apple Silicon + Intel engine.
 
-1. Download `PokeForge-v<VERSION>.zip` from
-   [GitHub Releases](https://github.com/sacrezm/pokeforge/releases), unzip it, and
-   move `PokeForge.app` to `/Applications`. Existing users can use **Update & Restart**.
-2. Install [Node.js 24 or newer](https://nodejs.org/en/download) if `node --version`
+1. Install [Node.js 24 or newer](https://nodejs.org/en/download) if `node --version`
    reports an older version or is unavailable.
-3. Add the marketplace and plugin:
+2. Add the marketplace and plugin:
 
    ```sh
    codex plugin marketplace add sacrezm/pokeforge
    codex plugin add pokeforge@pokeforge
    ```
 
-4. Start a new Codex chat and ask **Open PokéForge**, or use the extension entrypoint.
+3. Start a new Codex chat and ask **Open PokéForge**, or use the extension entrypoint.
 
 The Git marketplace includes built files. No `npm install`, build step, API key or
 new Pokémon save is needed. The panel offers companion progress, Catch / Train /
 Balanced modes, individual Pokémon details, usage history and limits, and the bag
-and token shop. Trading and advanced settings open in the native app.
+and token shop. Trading and advanced settings open in an on-demand window, without
+a menu-bar icon. The normal PokéForge desktop app remains an optional alternative.
 
 ### Install from the release ZIP
 
@@ -47,26 +46,41 @@ codex plugin marketplace upgrade pokeforge
 codex plugin add pokeforge@pokeforge
 ```
 
-Update the native app separately through **Update & Restart**. Restart Codex if an
-existing chat still exposes older tool names. Remove the extension with
+The engine is updated with the plugin and takes effect on its next start. Restart
+Codex after upgrading. To restart the engine immediately, open **Trading** and use
+the window's power button, then refresh the plugin. Otherwise it exits after five
+minutes without a connected host or open window. If you also
+use the optional desktop app, update it through **Update & Restart**. Remove the extension with
 `codex plugin remove pokeforge@pokeforge`; this does not delete the app or your save.
 
 ## Your data
 
-PokéForge remains the sole owner of progression, ownership and saves. The plugin
+The same native engine owns progression, ownership and saves. The plugin
 uses a private, owner-only Unix socket in the existing state directory. It never
 imports a second collection or writes save files directly. Purchases require
 confirmation and the current price; failed saves roll back. An uncertain action
 is never retried automatically: check your inventory before repeating it.
 
-No credentials, raw usage logs, prompts or project paths are sent to the plugin.
-Pokémon sprites load from PokéAPI's public GitHub repository. The native app keeps
+The engine reads local usage using the existing provider integrations. Only totals,
+limits and Pokémon state are sent to the panel; credentials, raw logs, prompts and
+project paths are not exposed to it.
+Pokémon sprites load from PokéAPI's public GitHub repository. The engine keeps
 its existing provider, update and optional trading connections. No hosted plugin
 service is required.
 
-If the panel cannot connect, open the current PokéForge app and press **Refresh**.
-An older app without the plugin bridge will not connect. Missing sprites can
-indicate that GitHub's sprite host is unavailable; your save is still local.
+On first use, the plugin verifies and unpacks its bundled engine in the existing
+Application Support directory, then runs it without a menu-bar icon or login item.
+If a compatible desktop app is already running, the plugin connects to it instead.
+A kernel lock prevents updated desktop and plugin processes from writing the same
+save simultaneously. Keep older apps closed when using the standalone plugin.
+The engine stays alive while Codex is connected; after the host disconnects and
+all engine windows close, it exits after five minutes of inactivity. Reopening
+the plugin resumes from the same save.
+
+If startup fails, quit an older PokéForge/PokeTokenBar app and retry. This release
+uses the existing self-signed identity; macOS Privacy & Security may require
+approval. No security setting is disabled. Missing sprites can indicate that
+GitHub's sprite host is unavailable; your save is still local.
 
 ## Development
 
@@ -81,7 +95,12 @@ Use the repository's isolated gameplay preview with a temporary `PTB_STATE_DIR`
 for spending tests. Never run destructive or spending tests against your real save.
 The repository's `scripts/test-gate.sh` covers the native engine and coverage floor;
 `scripts/package-plugin.sh <version>` creates the distributable marketplace ZIP.
-The release workflow tests the extracted ZIP without developer dependencies.
+After native changes, build a signed universal app at the plugin version and run
+`python3 scripts/package-plugin-engine.py` from the repository root. Commit
+`runtime/` together with the source: Git installations must include that engine.
+`node --test standalone.test.mjs` tests two clients, fresh startup, save persistence
+and restart using the isolated native preview. The release workflow also runs it
+against the extracted ZIP without developer dependencies.
 
 PokéForge is an unofficial Pokémon fan project and an independently maintained
 fork of [PokeTokenBar](https://github.com/chattymin/PokeTokenBar). The [MIT license](LICENSE)

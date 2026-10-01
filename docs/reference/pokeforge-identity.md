@@ -40,8 +40,10 @@ Sparkle update feed. An old app cannot be patched by changing source code alone.
    that deletes Application Support, preferences or Keychain records.
 
 Both app names share the same persisted identity. Do not run upstream PokeTokenBar
-and PokéForge as separate installations against the same data. The existing
-single-instance guard uses the retained bundle identifier.
+and PokéForge as separate installations against the same data. The retained bundle identifier and a kernel lock on the state directory prevent
+updated app and plugin engines from writing the same save concurrently. The
+plugin carries a signed engine and can run without installing the menu-bar app;
+its unpacked runtime cache lives under `PokeTokenBar/plugin-engines/`.
 
 ## Deliberately retained compatibility identifiers
 

@@ -9,6 +9,28 @@ import XCTest
 /// 시작 시각을 실제로 읽어낼 수 있는가. 첫 구현이 무효였던 원인이 판정이 아니라 **입력** 이었기 때문에
 /// 뒤쪽이 특히 중요하다.
 final class SingleInstanceTests: XCTestCase {
+    func testStateLockRejectsSecondWriterAndReleasesWhenOwnerCloses() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        var first: StateDirectoryLock? = try StateDirectoryLock(directory: directory)
+        try withExtendedLifetime(first) {
+            XCTAssertThrowsError(try StateDirectoryLock(directory: directory))
+        }
+        first = nil
+        XCTAssertNoThrow(try StateDirectoryLock(directory: directory))
+    }
+
+    func testStateLockCannotFollowASymlink() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let target = directory.appendingPathComponent("untouched")
+        try Data("unchanged".utf8).write(to: target)
+        try FileManager.default.createSymbolicLink(at: directory.appendingPathComponent("engine.lock"), withDestinationURL: target)
+        XCTAssertThrowsError(try StateDirectoryLock(directory: directory))
+        XCTAssertEqual(try String(contentsOf: target, encoding: .utf8), "unchanged")
+    }
+
     private let mine = Date(timeIntervalSince1970: 2_000)
     private var earlier: Date { mine.addingTimeInterval(-60) }
     private var later: Date { mine.addingTimeInterval(60) }

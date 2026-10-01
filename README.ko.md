@@ -10,7 +10,7 @@
 
 ## 현재 제공
 
-- **Codex 플러그인:** 기존 PokéForge 저장 데이터를 그대로 사용하여 Codex 안에서 동료, 훈련, 컬렉션, 사용량, 가방과 상점을 엽니다. [설치 안내](plugins/pokeforge/README.md).
+- **Codex 플러그인:** 기존 PokéForge 저장 데이터를 그대로 사용하여 Codex 안에서 동료, 훈련, 컬렉션, 사용량, 가방과 상점을 엽니다. [설치 안내](plugins/pokeforge/README.md). 메뉴 막대 앱 없이 독립 실행되며, 포함된 엔진이 기존 세이브를 사용합니다.
 - **훈련:** 레벨 5–100, XP, EV, Catch / Train / Balanced 모드를 지원합니다.
 - **사용량 추적:** Claude Code, Codex, Gemini CLI, Antigravity, OpenCode, Hermes Agent, Cursor, Grok CLI, Copilot CLI, Kiro CLI, Pi Agent, omp의 로컬 사용량 기록을 읽습니다. 오늘·주·월 합계와 지원되는 공식 한도를 보여 줍니다.
 - **부화와 진화:** 코딩 사용량으로 알을 부화하고 실제 진화 계보를 따라 동료를 키운 뒤, 완성한 포켓몬을 컬렉션에 졸업시킵니다. 부화에는 희귀도·성격·이로치가 적용됩니다.

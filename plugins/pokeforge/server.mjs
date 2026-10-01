@@ -3,13 +3,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { OpenAIExtensions } from '@openai/mcp-extensions/server';
-import { bridgeCall, actionSchema } from './bridge.mjs';
+import { actionSchema } from './bridge.mjs';
+import { engineCall } from './engine.mjs';
 import copy from './locales/en.json' with { type: 'json' };
 const server = new McpServer({ name: 'pokeforge', version: '2.7.0' });
 new OpenAIExtensions(server);
 const uri = 'ui://pokeforge/dashboard.html';
 const result = async (input, render = false) => {
-  const state = await bridgeCall(input);
+  const state = await engineCall(input);
   return { content: [{ type: 'text', text: state.error ? copy.errors[state.error] || copy.errors.invalid_response : copy.toolResult }], structuredContent: state, isError: render ? false : Boolean(state.error) };
 };
 registerAppResource(server, 'pokeforge-dashboard', uri, {}, async () => ({

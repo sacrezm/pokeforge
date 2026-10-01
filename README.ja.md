@@ -10,7 +10,7 @@
 
 ## 現在使える機能
 
-- **Codex プラグイン:** 既存の PokéForge セーブを共有し、Codex 内で相棒、トレーニング、コレクション、使用量、バッグとショップを開けます。[インストール手順](plugins/pokeforge/README.md)。
+- **Codex プラグイン:** 既存の PokéForge セーブを共有し、Codex 内で相棒、トレーニング、コレクション、使用量、バッグとショップを開けます。[インストール手順](plugins/pokeforge/README.md)。 メニューバーアプリなしで単独動作し、同梱エンジンが既存のセーブを利用します。
 - **トレーニング:** レベル 5–100、XP、EV、Catch / Train / Balanced モードに対応します。
 - **使用量トラッキング:** Claude Code、Codex、Gemini CLI、Antigravity、OpenCode、Hermes Agent、Cursor、Grok CLI、Copilot CLI、Kiro CLI、Pi Agent、omp のローカル使用量を読み取ります。今日・週・月の合計と、対応する公式上限を表示します。
 - **孵化と進化:** コーディングの使用量でタマゴを孵化させ、実際の進化系統に沿って相棒を育て、完成したポケモンをコレクションへ卒業させます。孵化にはレア度・せいかく・色違いがあります。

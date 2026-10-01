@@ -54,11 +54,13 @@ lipo "$APP/Contents/MacOS/PokeForge" -verify_arch arm64 x86_64
 ZIP="build/PokeForge-v$VERSION.zip"
 [[ ! -e "$ZIP" ]] || { echo "$ZIP already exists; inspect it before retrying"; exit 1; }
 ditto -c -k --keepParent "$APP" "$ZIP"
+python3 scripts/package-plugin-engine.py
 bash scripts/package-plugin.sh "$VERSION"
 PLUGIN_ZIP="build/PokeForge-Codex-v$VERSION.zip"
 PLUGIN_CHECK=$(mktemp -d "$PWD/build/plugin-install-XXXXXXXX")
 ditto -x -k "$PLUGIN_ZIP" "$PLUGIN_CHECK"
 (cd plugins/pokeforge && POKEFORGE_SERVER="$PLUGIN_CHECK/PokeForge-Codex-v$VERSION/plugins/pokeforge/dist/server.mjs" node --test test.mjs)
+(cd plugins/pokeforge && POKEFORGE_SERVER="$PLUGIN_CHECK/PokeForge-Codex-v$VERSION/plugins/pokeforge/dist/server.mjs" node --test standalone.test.mjs)
 
 # Publish a signed Sparkle feed beside the archive. Private keys never enter Git
 # or plaintext files. The private signing seed is read directly from 1Password.
@@ -72,7 +74,7 @@ op read "$PTB_SPARKLE_KEY_REF" | .build/artifacts/sparkle/Sparkle/bin/generate_a
 CHECKSUMS="build/SHA256SUMS.txt"
 (cd build && shasum -a 256 "$(basename "$ZIP")" "$(basename "$PLUGIN_ZIP")") > "$CHECKSUMS"
 
-git add scripts/build-app.sh
+git add scripts/build-app.sh plugins/pokeforge/runtime
 git commit -m "release: PokéForge v$VERSION"
 git push origin main
 # A draft prevents update alerts before the binary upload completes.

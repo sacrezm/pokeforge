@@ -15,7 +15,7 @@ struct PokeForgeApp: App {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSWindowDelegate {
     private static var isGameplayPreviewProcess: Bool {
         CommandLine.arguments.contains("--gameplay-preview") ||
             Bundle.main.bundleIdentifier == "local.pokeforge.gameplay-preview"
@@ -28,6 +28,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var companion: CompanionStore!
     private var trading: TradingFeature!
     private var pluginBridge: PluginBridge?
+    private var stateLock: StateDirectoryLock?
+    private var engineWindow: NSWindow?
     private let tradingNotifications = TradingNotifications()
     private var updater: UpdateChecker!
     private var floatingPet: FloatingPetController!
@@ -65,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var needsSpriteLayout = true
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        Self.isGameplayPreviewProcess
+        Self.isGameplayPreviewProcess && !AppEnv.isPluginEngine
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -81,7 +83,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             return
         }
         if Self.isGameplayPreviewProcess {
-            do { try GameplayPreview.start() }
+            do {
+                stateLock = try StateDirectoryLock(directory: AppStatePaths.directory(defaultName: "PokeTokenBar Gameplay Preview"))
+                try GameplayPreview.start()
+            }
             catch { print("Could not open isolated gameplay preview: \(error)"); NSApp.terminate(nil) }
             return
         }
@@ -97,6 +102,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             NSApp.terminate(nil)
             return
         }
+        Self.migrateLegacyStorageIfNeeded()
+        do { stateLock = try StateDirectoryLock(directory: AppStatePaths.directory()) }
+        catch {
+            AppLog.writeAndFlush("state directory locked or inaccessible: \(error)")
+            NSApp.terminate(nil)
+            return
+        }
         // 서브프로세스(codex app-server 등) 파이프가 조기 종료로 끊겨도 SIGPIPE 로 앱이 죽지 않게
         // 무시한다. ProcessRunner 의 throwing write 와 함께 broken-pipe 크래시를 막는 이중 방어.
         signal(SIGPIPE, SIG_IGN)
@@ -104,8 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         CrashReporter.install(
             version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?")
         NSApp.setActivationPolicy(.accessory)
-        Self.migrateLegacyStorageIfNeeded()   // TokenMac → PokeTokenBar 리네임: 기존 companion/캐시 보존
-        LoginItem.migrateFromLegacyLoginItemIfNeeded()   // 로그인아이템 → KeepAlive 에이전트(크래시 자동 재실행)
+        if !AppEnv.isPluginEngine { LoginItem.migrateFromLegacyLoginItemIfNeeded() }
         store = UsageStore()
         companion = CompanionStore()
         trading = TradingFeature(
@@ -125,15 +136,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         updater = UpdateChecker()
         store.localizationLanguage = companion.language   // 알림 현지화용 미러 시드
         store.onRefresh = { [weak self] in self?.onStoreRefreshed() }   // 한도 로드 후 companion·사탕 지급
-        floatingPet = FloatingPetController(
-            store: store, companion: companion,
-            onOpenPopover: { [weak self] in self?.openPopover() },
-            onHide: { [weak self] in self?.store.floatingPetEnabled = false }
-        )   // 데스크톱 플로팅 펫(옵트인)
-        updater.startAutomaticChecks()
+        if !AppEnv.isPluginEngine {
+            floatingPet = FloatingPetController(
+                store: store, companion: companion,
+                onOpenPopover: { [weak self] in self?.openPopover() },
+                onHide: { [weak self] in self?.store.floatingPetEnabled = false }
+            )
+            updater.startAutomaticChecks()
+        }
         tradingNotifications.onOpenTrade = { [weak self] in
             guard let self else { return }
-            if !self.popover.isShown { self.togglePopover() }
+            self.openPopover()
             self.navigation.showSettings = false
             self.navigation.tab = .trade
             self.trading.markActivityRead()
@@ -144,6 +157,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             await trading.start()
             trading.startBackgroundUpdates()
         }
+
+        pluginBridge = PluginBridge(companion: companion, usage: store, trading: trading) { [weak self] page in
+            guard let self else { return }
+            self.openPopover()
+            self.navigation.showSettings = page == "settings"
+            if page == "trade" { self.navigation.tab = .trade }
+        }
+        do { try pluginBridge?.start() }
+        catch { AppLog.write("plugin bridge: \(error)") }
+        if AppEnv.isPluginEngine { return }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
@@ -160,14 +183,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.behavior = .transient
         popover.delegate = self   // didShow: outside-click monitor; didClose: 호스팅 해제 + 모니터 제거
 
-        pluginBridge = PluginBridge(companion: companion, usage: store, trading: trading) { [weak self] page in
-            guard let self else { return }
-            self.openPopover()
-            self.navigation.showSettings = page == "settings"
-            if page == "trade" { self.navigation.tab = .trade }
-        }
-        do { try pluginBridge?.start() }
-        catch { AppLog.write("plugin bridge: \(error)") }
         observeStore()
         observeTradingActivity()
         observeCompanionSprite()
@@ -605,6 +620,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// TokenMac→PokeTokenBar 리네임에 따른 1회 이전: 기존 Application Support 폴더를
     /// 새 이름으로 옮겨 companion 진행상황·스프라이트 캐시·스냅샷을 보존한다(신규 폴더 없을 때만).
     private static func migrateLegacyStorageIfNeeded() {
+        guard AppStatePaths.overrideDirectory == nil else { return }
         let fm = FileManager.default
         let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let old = base.appendingPathComponent("TokenMac")
@@ -630,10 +646,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// NSHostingView 트리가 상주하며 매 디스플레이 사이클 재레이아웃된다(측정: idle CPU 최대 비용 — 닫힌
     /// 팝오버의 relative-time Text self-invalidation × 메뉴 애니메이션 CA 커밋). 그래서 열 때 만들고 닫힐 때 해제.
     func openPopover() {
+        if AppEnv.isPluginEngine {
+            if engineWindow == nil {
+                buildPopoverContent()
+                let window = NSWindow(contentViewController: popover.contentViewController!)
+                popover.contentViewController = nil
+                window.styleMask = [.titled, .closable, .miniaturizable]
+                window.title = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? ""
+                window.isReleasedWhenClosed = false
+                window.delegate = self
+                window.center()
+                engineWindow = window
+            }
+            engineWindow?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
         // Pet click is an outside click for a .transient popover — if already shown it is
         // already dismissing; the old "activate/makeKey" branch never applied.
         guard !popover.isShown else { return }
         togglePopover()
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === engineWindow else { return }
+        window.contentViewController = nil
+        engineWindow = nil
     }
 
     private func buildPopoverContent() {

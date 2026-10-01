@@ -62,9 +62,10 @@ test('MCP exposes both UI entrypoints, live data, checked actions and a bundled 
     const serverPath = resolve(process.env.POKEFORGE_SERVER || 'dist/server.mjs');
     const pluginRoot = dirname(dirname(serverPath));
     const manifest = JSON.parse(await readFile(join(pluginRoot, '.codex-plugin/plugin.json'), 'utf8'));
-    for (const file of [manifest.interface.logo, manifest.interface.composerIcon, 'LICENSE', 'dist/THIRD_PARTY_NOTICES.txt']) {
+    for (const file of [manifest.interface.logo, manifest.interface.composerIcon, 'LICENSE', 'dist/THIRD_PARTY_NOTICES.txt', 'runtime/PokeForge.zip']) {
       assert.ok((await readFile(join(pluginRoot, file))).length, `Missing packaged asset: ${file}`);
     }
+    assert.equal(JSON.parse(await readFile(join(pluginRoot, 'runtime/engine.json'))).version, manifest.version);
     const client = new Client({ name: 'pokeforge-test', version: '1.0.0' });
     await client.connect(new StdioClientTransport({ command: process.execPath, args: [serverPath], cwd: pluginRoot, env: { ...process.env, PTB_STATE_DIR: directory } }));
     try {

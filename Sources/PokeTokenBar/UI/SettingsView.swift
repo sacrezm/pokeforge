@@ -72,10 +72,12 @@ struct SettingsView: View {
                         generalGroup(store)
                         hatchGenerationGroup
                         difficultyGroup
-                        menuBarGroup(store)
-                        floatingPetGroup(store)
+                        if !AppEnv.isPluginEngine {
+                            menuBarGroup(store)
+                            floatingPetGroup(store)
+                            updateGroup(store)
+                        }
                         notificationsGroup(store)
-                        updateGroup(store)
                         transferGroup(store)
                         advancedGroup(store)
                             .id("advancedSettingsSection")
@@ -239,31 +241,33 @@ struct SettingsView: View {
                 Divider()
                 trackedAccountRow(store)
             }
-            Divider()
-            groupRow {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(l.launchAtLogin)
-                    if !isBundledApp {
-                        Text(l.bundledOnly).font(.caption2).foregroundStyle(.tertiary)
-                    }
-                    if let launchAtLoginError {
-                        Text(l.userFacingError(launchAtLoginError)).font(.caption2).foregroundStyle(.red)
-                    }
-                }
-                Spacer()
-                Toggle(l.launchAtLogin, isOn: $launchAtLogin)
-                    .labelsHidden().toggleStyle(.switch).controlSize(.small)
-                    .disabled(!isBundledApp)
-                    .onChange(of: launchAtLogin) { _, newValue in
-                        do {
-                            try LoginItem.setEnabled(newValue)   // KeepAlive 에이전트(로그인 실행+크래시 재실행)
-                            launchAtLoginError = nil
-                        } catch {
-                            AppLog.write("login item update failed: \(error)")
-                            launchAtLoginError = error
-                            launchAtLogin = LoginItem.isEnabled
+            if !AppEnv.isPluginEngine {
+                Divider()
+                groupRow {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(l.launchAtLogin)
+                        if !isBundledApp {
+                            Text(l.bundledOnly).font(.caption2).foregroundStyle(.tertiary)
+                        }
+                        if let launchAtLoginError {
+                            Text(l.userFacingError(launchAtLoginError)).font(.caption2).foregroundStyle(.red)
                         }
                     }
+                    Spacer()
+                    Toggle(l.launchAtLogin, isOn: $launchAtLogin)
+                        .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                        .disabled(!isBundledApp)
+                        .onChange(of: launchAtLogin) { _, newValue in
+                            do {
+                                try LoginItem.setEnabled(newValue)   // KeepAlive 에이전트(로그인 실행+크래시 재실행)
+                                launchAtLoginError = nil
+                            } catch {
+                                AppLog.write("login item update failed: \(error)")
+                                launchAtLoginError = error
+                                launchAtLogin = LoginItem.isEnabled
+                            }
+                        }
+                }
             }
         }
     }

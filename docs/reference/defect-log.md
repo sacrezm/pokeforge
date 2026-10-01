@@ -1001,6 +1001,18 @@ read_when:
 
 ## 프로세스 제어·업데이트
 
+- **A plugin that connects only to an already-running app is not standalone.**
+  The first plugin's MCP tests supplied a fake bridge, hiding the missing engine
+  startup path. It now carries the signed universal engine, verifies its archive
+  and signing requirement, and starts it without a toolbar or login registration.
+  Both app entry paths acquire the same kernel lock before opening stores; the
+  older LaunchServices-only check did not cover simultaneous raw launches.
+  `standalone.test.mjs` exercises two real MCP clients, a competing native launch,
+  an inventory mutation and process restart in an isolated save. It also injects
+  a corrupt archive and requires verification failure. `SingleInstanceTests`
+  rejects a second writer and lock-file symlinks. Keep the legacy directory move
+  before lock creation, or creating the destination hides the legacy save.
+
 - **Test the distributed plugin, not a developer symlink.** The first local plugin
   worked because its ignored `dist/` existed only on the author's Mac; a Git
   marketplace download would not contain its executable. Ship the bundled files,

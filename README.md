@@ -24,7 +24,7 @@ PokéForge turns the AI tokens you already use into progress for your Pokémon. 
 
 ## What ships today
 
-- **Codex plugin.** Companion progress, training, owned collection, usage history, and the bag and shop inside Codex. The plugin shares the native app’s save. [Install the plugin](#codex-plugin).
+- **Codex plugin.** Companion progress, training, owned collection, usage history, and the bag and shop inside Codex. It runs standalone with a bundled engine and shares existing saves. [Install the plugin](#codex-plugin).
 - **Training.** Persistent levels 5–100, XP, capped EV stats, and Catch / Train / Balanced modes for locally raised and currently owned traded Pokémon.
 
 - **Usage tracking.** Read local usage records from Claude Code, Codex, Gemini CLI, Antigravity, OpenCode, Hermes Agent, Cursor, Grok CLI, Copilot CLI, Kiro CLI, Pi Agent, and omp. See today, week, and month totals, reported cost where available, and supported official limit windows.
@@ -59,7 +59,7 @@ tokens, a separate app identity and save folder, and no real usage or trading.
 
 ## Screenshots
 
-The current Codex dashboard below uses isolated sandbox data. The native app
+The current Codex dashboard below uses isolated sandbox data. The optional native app
 screenshots that follow are from before the rebrand and retain some original labels.
 
 ![PokéForge Codex dashboard with sandbox Pokémon](assets/screenshot-codex.jpg)
@@ -83,7 +83,7 @@ Releases use a stable self-signed certificate and are not Apple-notarized. If ma
 
 ### Codex plugin
 
-Install and run the current PokéForge app, install [Node.js 24+](https://nodejs.org/en/download),
+Install [Node.js 24+](https://nodejs.org/en/download),
 then run:
 
 ```sh
@@ -91,7 +91,8 @@ codex plugin marketplace add sacrezm/pokeforge
 codex plugin add pokeforge@pokeforge
 ```
 
-Start a new Codex chat and ask **Open PokéForge**. Your existing Pokémon appear
+Start a new Codex chat and ask **Open PokéForge**. No menu-bar app installation is
+required: the plugin starts its bundled engine automatically. Your existing Pokémon appear
 without importing or copying saves. A supported Codex desktop client is required.
 The plugin runs locally and is not available in Codex Cloud or on Windows/Linux.
 

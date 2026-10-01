@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import Darwin
 
 /// Same-user IPC only. The native stores remain the sole writers of game state.
@@ -9,6 +9,8 @@ final class PluginBridge {
     private let trading: TradingFeature?
     private let openNative: (String) -> Void
     private var source: DispatchSourceRead?
+    private var idleTimer: Timer?
+    private var lastRequestAt = Date()
     private var clients = 0
     private var replies: [String: (expires: Double, data: Data)] = [:]
     private let socketURL: URL
@@ -56,9 +58,18 @@ final class PluginBridge {
         source.setCancelHandler { close(fd); unlink(path) }
         self.source = source
         source.resume()
+        if AppEnv.isPluginEngine {
+            idleTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, Date().timeIntervalSince(self.lastRequestAt) > 300,
+                          !NSApp.windows.contains(where: { $0.isVisible }) else { return }
+                    NSApp.terminate(nil)
+                }
+            }
+        }
     }
 
-    func stop() { source?.cancel(); source = nil }
+    func stop() { idleTimer?.invalidate(); idleTimer = nil; source?.cancel(); source = nil }
 
     private static func address(_ path: String) -> sockaddr_un {
         var address = sockaddr_un()
@@ -128,6 +139,7 @@ final class PluginBridge {
             return Self.encode(["error": "invalid_request"])
         }
         replies = replies.filter { $0.value.expires > Date().timeIntervalSince1970 }
+        lastRequestAt = Date()
         if let cached = replies[nonce] { return cached.data }
         guard action == "snapshot" || replies.count < 256 else { return Self.encode(["error": "busy"]) }
         let value = request["value"] as? String ?? ""
@@ -218,7 +230,9 @@ final class PluginBridge {
             ["id": item.rawValue, "price": companion.price(of: item) as Any? ?? null,
              "count": companion.itemCount(item), "canBuy": companion.canBuy(item), "passive": item.isPassive]
         }
-        return ["schemaVersion": 1, "sandbox": sandbox, "updatedAt": Date().timeIntervalSince1970,
+        return ["schemaVersion": 1, "sandbox": sandbox, "headless": AppEnv.isPluginEngine,
+            "enginePID": ProcessInfo.processInfo.processIdentifier,
+            "updatedAt": Date().timeIntervalSince1970,
             "saveError": companion.persistenceError != nil, "collection": collection,
             "companion": ["egg": companion.isEgg, "name": companion.displayName,
                 "speciesID": companion.currentSpeciesID as Any? ?? null, "shiny": companion.currentIsShiny,

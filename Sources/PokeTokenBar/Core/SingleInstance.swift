@@ -65,3 +65,29 @@ enum SingleInstance {
         return shouldYield(myStartTime: processStartTime(me), otherStartTimes: others)
     }
 }
+
+/// A kernel lock covers simultaneous startup and direct executable launches too.
+/// Hold it before opening any stores; process exit releases it even after a crash.
+final class StateDirectoryLock {
+    private let descriptor: Int32
+
+    init(directory: URL) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let descriptor = open(directory.appendingPathComponent("engine.lock").path,
+                              O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC, 0o600)
+        guard descriptor >= 0 else { throw POSIXError(.EACCES) }
+        var info = stat()
+        guard fstat(descriptor, &info) == 0, info.st_uid == geteuid(),
+              info.st_mode & S_IFMT == S_IFREG else {
+            close(descriptor); throw POSIXError(.EACCES)
+        }
+        guard flock(descriptor, LOCK_EX | LOCK_NB) == 0 else {
+            let code = errno
+            close(descriptor)
+            throw POSIXError(POSIXErrorCode(rawValue: code) ?? .EIO)
+        }
+        self.descriptor = descriptor
+    }
+
+    deinit { close(descriptor) }
+}

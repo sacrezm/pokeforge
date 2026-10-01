@@ -1,23 +1,23 @@
 {
   "name": "pokeforge",
   "version": "2.7.0",
-  "description": "Pok\u00e9mon, training and local AI usage in Codex.",
+  "description": "Pokémon, training and local AI usage in Codex.",
   "author": {
     "name": "Mathias"
   },
   "interface": {
-    "displayName": "Pok\u00e9Forge",
-    "shortDescription": "Pok\u00e9mon and usage in Codex",
+    "displayName": "PokéForge",
+    "shortDescription": "Pokémon and usage in Codex",
     "logo": "./assets/icon.png",
     "composerIcon": "./assets/icon.png",
-    "longDescription": "Your Pok\u00e9Forge companion, owned collection, training, usage history, items and Pok\u00e9 Balls in one Codex panel. Connects to the local Pok\u00e9Forge app.",
+    "longDescription": "Your Pokémon companion, collection, training, AI usage and token shop in Codex. Includes its own local Mac engine, shares existing PokéForge saves and needs no menu-bar app.",
     "developerName": "Mathias",
     "category": "Productivity",
     "capabilities": [
       "Interactive"
     ],
     "defaultPrompt": [
-      "Open Pok\u00e9Forge."
+      "Open PokéForge."
     ],
     "brandColor": "#C63830"
   },
