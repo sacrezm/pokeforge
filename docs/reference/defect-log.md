@@ -11,6 +11,17 @@ read_when:
 
 # 결함 대응 축적 규칙
 
+## ServiceManagement SDK compatibility (2026-10-01)
+
+- The async-imported `SMAppService.unregister()` moved a main-actor service across
+  an isolation boundary on Xcode 16.4, failing CI although Xcode 26.5 passed locally.
+  Use the completion-handler API on the main actor and await its continuation before
+  re-registering; the synchronous overload returns before the service is reaped.
+- Swept every unregister call: the other two are synchronous disable/migration
+  paths, without immediate re-registration. The existing macOS 15 CI build is the
+  regression check and failed on the original call; local tests alone cannot prove
+  compatibility with its older SDK. Do not change the user's login item to test it.
+
 ## Codex plugin IPC and persistence (2026-09-30)
 
 - Native bridge clients must clear inherited `O_NONBLOCK` before bounded blocking

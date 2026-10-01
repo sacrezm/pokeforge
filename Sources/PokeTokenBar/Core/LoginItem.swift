@@ -27,7 +27,13 @@ enum LoginItem {
     /// Rebind launchd after an in-place signed app replacement; preserve an existing opt-out.
     static func refreshRegistrationIfEnabled() async throws -> Bool {
         guard isEnabled else { return false }
-        try await agent.unregister()
+        // Keep ServiceManagement on the main actor on older SDKs too.
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            agent.unregister { error in
+                if let error { continuation.resume(throwing: error) }
+                else { continuation.resume() }
+            }
+        }
         try agent.register()
         return true
     }
