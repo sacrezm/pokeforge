@@ -11,6 +11,16 @@ read_when:
 
 # 결함 대응 축적 규칙
 
+## Native progress-track height across macOS versions (2026-10-01)
+
+- The pace marker assumed Tahoe's 6pt painted track on every supported system.
+  macOS 15 CI measured a 3pt track with the unchanged 10pt marker. Use the native
+  design's track height for each OS so the marker extends only 2pt on either side.
+- Swept marker-height constants and progress overlays; `LimitProgressBar` is the
+  shared owner. Its existing pixel-rendering regression failed on macOS 15 and
+  passed locally on Tahoe, demonstrating why both environments are needed. Keep
+  its measured-track assertion rather than widening the tolerance.
+
 ## ServiceManagement SDK compatibility (2026-10-01)
 
 - The async-imported `SMAppService.unregister()` moved a main-actor service across
