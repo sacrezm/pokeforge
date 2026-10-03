@@ -23,7 +23,8 @@ securely have the **same certificate and private key**, not create a replacement
 with the same name. Never put private keys or certificates containing private keys in Git.
 
 Prepare the English notes and verified contributor roster from the previous public
-release first. Update the plugin version in both manifests (`.codex-plugin` and `.claude-plugin`
+release first. Merged work collects in `docs/reference/releases/unreleased.md` and
+`unreleased.contributors.txt`: rename both to `v<version>` and replace `<VERSION>`. Update the plugin version in both manifests (`.codex-plugin` and `.claude-plugin`
 `plugin.json`; the Claude marketplace entry carries no version), package metadata and
 MCP/UI entrypoints to match the release, run `npm ci && npm test` in
 `plugins/pokeforge`, and commit its `dist` output and `hooks/pokeforge.mjs`. Git marketplace installs use those

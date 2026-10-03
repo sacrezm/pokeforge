@@ -32,6 +32,10 @@ read_when:
   spelled `$.noun.event(...)`: keep per-effect closures, never store `$`.
 - Every snapshot attaches sprite art: remember a failed fetch (ten-minute `.miss`
   marker) so an unreachable sprite host does not add its timeout to every poll.
+- Installed plugins' mods load only while the server-side rollout flag
+  `tengu_plugin_hooks_modules` serves on for the signed-in account; `claude plugin test`
+  then refuses too, and `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS` does not override it. CI and
+  `release.sh` run the kit tests with an empty `CLAUDE_CONFIG_DIR` (the flag's default).
 
 ## Native progress-track height across macOS versions (2026-10-01)
 

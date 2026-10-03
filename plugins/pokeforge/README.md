@@ -69,7 +69,9 @@ Activity and Bag & shop. In Claude Code Desktop's Code tab and in VS Code there 
 the PokéForge pane opens when the app connects. Close it and it stays closed until you run
 **/pokeforge**. Purchases ask for confirmation first.
 
-Claude Code Mods are an early-access feature; if the toolbar does not appear, start Claude Code with CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1.
+Claude Code Mods are early access, and Anthropic enables plugin mods per account through a
+server-side rollout that no local setting overrides. If **/pokeforge** is missing, mods are not
+enabled for your account yet; the plugin's MCP tools still work.
 
 The plugin also loads the local MCP server it shares with the Codex plugin
 (`get_pokeforge`, `update_pokeforge`, `open_pokeforge`).
@@ -134,7 +136,8 @@ From this directory, run `npm ci` and `npm test`. `npm run preview` serves the s
 UI at `http://127.0.0.1:8766/index.html`. UI copy lives in `locales/en.json`.
 Commit regenerated `dist/`, `hooks/pokeforge.mjs` and `tests/fixtures/copy.ts` after source
 changes; CI rejects stale bundles. The Claude mod (`mod*.mjs`) is tested by `tests/*.test.ts`: run
-`claude plugin validate .` and `claude plugin test .` (CI pins Claude Code 2.1.287).
+`claude plugin validate .` and `claude plugin test .` (CI pins Claude Code 2.1.287; run the tests
+with an empty `CLAUDE_CONFIG_DIR` while your account's mods rollout is off).
 `dist/THIRD_PARTY_NOTICES.txt` contains bundled dependency licenses. The license
 omitted by the `@cfworker/json-schema` npm archive is retained under `licenses/`
 from its [4.1.1 source revision](https://github.com/cfworker/cfworker/blob/5409fdc2bd144f68e8b28c61c71fcb16600000a6/LICENSE.md).

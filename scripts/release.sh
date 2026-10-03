@@ -43,7 +43,8 @@ python3 -m unittest discover -s scripts/tests -p 'test_release_metadata.py'
 npm --prefix plugins/pokeforge ci
 npm --prefix plugins/pokeforge test
 git diff --exit-code -- plugins/pokeforge/dist plugins/pokeforge/hooks plugins/pokeforge/tests/fixtures/copy.ts
-claude plugin test plugins/pokeforge
+# An empty config, as in CI: the signed-in account's mods rollout must not decide the gate.
+CLAUDE_CONFIG_DIR="$(mktemp -d)" claude plugin test plugins/pokeforge
 ./scripts/test-gate.sh
 # Only the version default is changed; a failed build leaves it uncommitted for inspection.
 perl -pi -e "s/PTB_VERSION:-[0-9.]+/PTB_VERSION:-$VERSION/" scripts/build-app.sh
