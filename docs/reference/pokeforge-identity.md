@@ -12,12 +12,14 @@ source provenance.
 | --- | --- |
 | App display name | PokéForge |
 | Codex plugin display name / identifier | PokéForge / `pokeforge` |
+| Claude Code plugin display name / identifier | PokéForge / `pokeforge` (install as `pokeforge@pokeforge`) |
+| Claude Code slash command | `/pokeforge` |
 | Codex MCP tools | `open_pokeforge`, `get_pokeforge`, `update_pokeforge` |
 | Repository | `sacrezm/pokeforge` |
 | App bundle and executable | `PokeForge.app`, `PokeForge` |
 | Swift package / executable product | `PokeForge` |
 | New release archives | `PokeForge-v<version>.zip` |
-| Codex plugin archive | `PokeForge-Codex-v<version>.zip` |
+| Plugin archive (Codex and Claude Code marketplace) | `PokeForge-Codex-v<version>.zip` |
 | Support | Issues in `sacrezm/pokeforge` |
 
 ## Upgrade from PokeTokenBar
@@ -56,6 +58,8 @@ a separate, verified data or infrastructure migration:
   LaunchAgent label remains stable. New launch entries point at `PokeForge`.
 - `com.chattymin.PokeTokenBar.trading.v1` and `PokeTokenBar.trading.*`: Keychain and
   saved trainer state. These must continue to find existing trainer credentials.
+- `PokeForge-Codex-v<version>.zip`: the plugin archive also serves Claude Code; the
+  published name stays so existing links and `release.sh` keep working.
 - `poketokenbar.save`: exported save format identifier. New export filenames use
   `PokeForge-Save-…`, while existing saves remain readable.
 - The existing signing certificate, `PokeTokenBar Local` fallback identity and

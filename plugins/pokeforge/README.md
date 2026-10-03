@@ -1,11 +1,11 @@
-# PokéForge for Codex
+# PokéForge for Codex and Claude Code
 
 Raise Pokémon, train your team, browse your collection, and track AI usage inside
-Codex. The plugin includes its own local engine: no menu-bar app installation or
+Codex or Claude Code. The plugin includes its own local engine: no menu-bar app installation or
 running toolbar is required. Existing PokéForge saves are used automatically,
 including Pokémon received through trading.
 
-## Install
+## Install in Codex
 
 Requires macOS 14+, a Codex desktop client with plugin extensions and Node.js 24+.
 The plugin includes a signed universal Apple Silicon + Intel engine.
@@ -53,6 +53,50 @@ minutes without a connected host or open window. If you also
 use the optional desktop app, update it through **Update & Restart**. Remove the extension with
 `codex plugin remove pokeforge@pokeforge`; this does not delete the app or your save.
 
+## Install in Claude Code
+
+Requires macOS 14+, Claude Code with Mods support and Node.js 24+ on `PATH`. The same
+bundled engine runs as in Codex; there is no second save.
+
+```sh
+claude plugin marketplace add sacrezm/pokeforge
+claude plugin install pokeforge@pokeforge
+```
+
+Start a new Claude Code session. In the terminal, a toolbar band above the prompt shows
+your companion and its progress, and **/pokeforge** opens a pane with Companion, Collection,
+Activity and Bag & shop. In Claude Code Desktop's Code tab and in VS Code there is no toolbar:
+the PokéForge pane opens when the app connects. Close it and it stays closed until you run
+**/pokeforge**. Purchases ask for confirmation first.
+
+Claude Code Mods are an early-access feature; if the toolbar does not appear, start Claude Code with CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1.
+
+The plugin also loads the local MCP server it shares with the Codex plugin
+(`get_pokeforge`, `update_pokeforge`, `open_pokeforge`).
+
+### Install from the release ZIP
+
+From the first release that includes Claude Code support, the same `PokeForge-Codex-v<VERSION>.zip`
+serves Codex and Claude Code. Extract it and add the folder containing `.claude-plugin` and `plugins`
+as the marketplace:
+
+```sh
+claude plugin marketplace add /absolute/path/to/PokeForge-Codex-v<VERSION>
+claude plugin install pokeforge@pokeforge
+```
+
+### Update or remove
+
+```sh
+claude plugin marketplace update pokeforge
+claude plugin update pokeforge@pokeforge
+```
+
+Restart Claude Code to apply an update. For a ZIP installation, run
+`claude plugin marketplace remove pokeforge` and add the newer extracted folder instead.
+Remove the plugin with `claude plugin uninstall pokeforge@pokeforge`; this does not delete the app
+or your save. Engine updates behave as described for Codex.
+
 ## Your data
 
 The same native engine owns progression, ownership and saves. The plugin
@@ -73,20 +117,24 @@ Application Support directory, then runs it without a menu-bar icon or login ite
 If a compatible desktop app is already running, the plugin connects to it instead.
 A kernel lock prevents updated desktop and plugin processes from writing the same
 save simultaneously. Keep older apps closed when using the standalone plugin.
-The engine stays alive while Codex is connected; after the host disconnects and
+The engine stays alive while Codex or Claude Code is connected; after the host disconnects and
 all engine windows close, it exits after five minutes of inactivity. Reopening
 the plugin resumes from the same save.
 
 If startup fails, quit an older PokéForge/PokeTokenBar app and retry. This release
 uses the existing self-signed identity; macOS Privacy & Security may require
 approval. No security setting is disabled. Missing sprites can indicate that
-GitHub's sprite host is unavailable; your save is still local.
+GitHub's sprite host is unavailable; your save is still local. The Claude Code mod
+caches sprite art in the `mod-sprites` folder of the state directory and retries an
+unreachable sprite host after ten minutes.
 
 ## Development
 
 From this directory, run `npm ci` and `npm test`. `npm run preview` serves the same
 UI at `http://127.0.0.1:8766/index.html`. UI copy lives in `locales/en.json`.
-Commit regenerated `dist/` after source changes; CI rejects stale bundles.
+Commit regenerated `dist/`, `hooks/pokeforge.mjs` and `tests/fixtures/copy.ts` after source
+changes; CI rejects stale bundles. The Claude mod (`mod*.mjs`) is tested by `tests/*.test.ts`: run
+`claude plugin validate .` and `claude plugin test .` (CI pins Claude Code 2.1.287).
 `dist/THIRD_PARTY_NOTICES.txt` contains bundled dependency licenses. The license
 omitted by the `@cfworker/json-schema` npm archive is retained under `licenses/`
 from its [4.1.1 source revision](https://github.com/cfworker/cfworker/blob/5409fdc2bd144f68e8b28c61c71fcb16600000a6/LICENSE.md).
@@ -94,7 +142,8 @@ from its [4.1.1 source revision](https://github.com/cfworker/cfworker/blob/5409f
 Use the repository's isolated gameplay preview with a temporary `PTB_STATE_DIR`
 for spending tests. Never run destructive or spending tests against your real save.
 The repository's `scripts/test-gate.sh` covers the native engine and coverage floor;
-`scripts/package-plugin.sh <version>` creates the distributable marketplace ZIP.
+`scripts/package-plugin.sh <version>` creates the distributable marketplace ZIP
+(Codex and Claude Code).
 After native changes, build a signed universal app at the plugin version and run
 `python3 scripts/package-plugin-engine.py` from the repository root. Commit
 `runtime/` together with the source: Git installations must include that engine.

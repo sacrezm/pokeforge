@@ -19,7 +19,8 @@ PTB_CONTRIBUTORS_FILE="docs/reference/releases/v<version>.contributors.txt" \
 Choose a version higher than the current release and align the plugin's version.
 The script checks the notes and verified contributor roster, runs the native and
 plugin tests, builds a universal app and verifies its signature. It publishes
-`PokeForge-v<version>.zip`, `PokeForge-Codex-v<version>.zip`, a signed `appcast.xml`
+`PokeForge-v<version>.zip`, `PokeForge-Codex-v<version>.zip` (the Codex and Claude Code plugin
+marketplace), a signed `appcast.xml`
 and `SHA256SUMS.txt`. It does not install the app on the release machine.
 
 Before publishing:
@@ -29,7 +30,7 @@ Before publishing:
 - Review release notes and screenshots for accuracy, including fork attribution.
   Use sandbox data in new public screenshots. Include all verified contributors
   since the previous public release, including merged upstream contributions.
-- Commit the plugin's built `dist` files, signed `runtime` engine, icons and bundled dependency licenses;
+- Commit the plugin's built `dist` files, `hooks/pokeforge.mjs` (the Claude mod), signed `runtime` engine, icons and bundled dependency licenses;
   the release gate checks the extracted archive without its own `node_modules`.
 - Run the isolated updater smoke test when changing updater or packaging behavior.
 - Keep the existing signing certificate, Sparkle public key, bundle identifier,

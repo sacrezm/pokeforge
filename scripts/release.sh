@@ -36,12 +36,14 @@ gh repo view "$REPO" --json visibility --jq .visibility | grep -qx PUBLIC \
 if gh release view "v$VERSION" --repo "$REPO" >/dev/null 2>&1; then
   echo "Release already exists; choose a new version"; exit 1
 fi
+command -v claude >/dev/null || { echo "Claude Code CLI required to validate the Claude mod"; exit 1; }
 
 echo "Testing and building v$VERSION. No app installation or save changes."
 python3 -m unittest discover -s scripts/tests -p 'test_release_metadata.py'
 npm --prefix plugins/pokeforge ci
 npm --prefix plugins/pokeforge test
-git diff --exit-code -- plugins/pokeforge/dist
+git diff --exit-code -- plugins/pokeforge/dist plugins/pokeforge/hooks plugins/pokeforge/tests/fixtures/copy.ts
+claude plugin test plugins/pokeforge
 ./scripts/test-gate.sh
 # Only the version default is changed; a failed build leaves it uncommitted for inspection.
 perl -pi -e "s/PTB_VERSION:-[0-9.]+/PTB_VERSION:-$VERSION/" scripts/build-app.sh
@@ -61,6 +63,9 @@ PLUGIN_CHECK=$(mktemp -d "$PWD/build/plugin-install-XXXXXXXX")
 ditto -x -k "$PLUGIN_ZIP" "$PLUGIN_CHECK"
 (cd plugins/pokeforge && POKEFORGE_SERVER="$PLUGIN_CHECK/PokeForge-Codex-v$VERSION/plugins/pokeforge/dist/server.mjs" node --test test.mjs)
 (cd plugins/pokeforge && POKEFORGE_SERVER="$PLUGIN_CHECK/PokeForge-Codex-v$VERSION/plugins/pokeforge/dist/server.mjs" node --test standalone.test.mjs)
+CLAUDE_ROOT="$PLUGIN_CHECK/PokeForge-Codex-v$VERSION"
+claude plugin validate --strict "$CLAUDE_ROOT/plugins/pokeforge"
+claude plugin validate --strict "$CLAUDE_ROOT"
 
 # Publish a signed Sparkle feed beside the archive. Private keys never enter Git
 # or plaintext files. The private signing seed is read directly from 1Password.

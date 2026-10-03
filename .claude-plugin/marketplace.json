@@ -1,0 +1,8 @@
+{
+  "name": "pokeforge",
+  "description": "PokéForge: a Pokémon companion that grows with your AI token usage",
+  "owner": { "name": "Mathias" },
+  "plugins": [
+    { "name": "pokeforge", "source": "./plugins/pokeforge", "description": "PokéForge companion toolbar for Claude Code Mods" }
+  ]
+}

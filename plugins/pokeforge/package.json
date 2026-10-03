@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "node build.mjs",
-    "test": "npm run build && node --test test.mjs",
+    "test": "npm run build && node --test test.mjs mod-sprite.test.mjs",
     "start": "node dist/server.mjs",
     "preview": "node dist/serve.mjs"
   },

@@ -11,6 +11,7 @@
 ## 現在使える機能
 
 - **Codex プラグイン:** 既存の PokéForge セーブを共有し、Codex 内で相棒、トレーニング、コレクション、使用量、バッグとショップを開けます。[インストール手順](plugins/pokeforge/README.md)。 メニューバーアプリなしで単独動作し、同梱エンジンが既存のセーブを利用します。
+- **Claude Code Mod:** 同じ相棒、コレクション、アクティビティ、ショップを、同じエンジンとセーブで Claude Code 内でも使えます。ターミナルではプロンプト上のツールバーバンドと **/pokeforge** ペインで表示します。[インストール手順](plugins/pokeforge/README.md#install-in-claude-code)。
 - **トレーニング:** レベル 5–100、XP、EV、Catch / Train / Balanced モードに対応します。
 - **使用量トラッキング:** Claude Code、Codex、Gemini CLI、Antigravity、OpenCode、Hermes Agent、Cursor、Grok CLI、Copilot CLI、Kiro CLI、Pi Agent、omp のローカル使用量を読み取ります。今日・週・月の合計と、対応する公式上限を表示します。
 - **孵化と進化:** コーディングの使用量でタマゴを孵化させ、実際の進化系統に沿って相棒を育て、完成したポケモンをコレクションへ卒業させます。孵化にはレア度・せいかく・色違いがあります。
@@ -44,6 +45,15 @@
 [PokéForge のリリース](https://github.com/sacrezm/pokeforge/releases)からアプリ ZIP をダウンロードしてください。GitHub が自動生成するソースコード ZIP ではなく、ビルド済みアプリ ZIP を使い、展開したアプリを `/Applications` に移動します。
 
 `PokeForge-v<VERSION>.zip` には macOS 14 以降、Apple Silicon・Intel 対応の `PokeForge.app` が含まれます。Codex プラグインには Node.js 24 以降が必要で、専用のプラグイン ZIP も提供します。
+
+**Claude Code プラグイン:** Node.js 24 以降をインストールして、次を実行してください。
+
+```sh
+claude plugin marketplace add sacrezm/pokeforge
+claude plugin install pokeforge@pokeforge
+```
+
+Codex プラグインと同じ同梱エンジンとセーブを使うため、別のセーブは作られません。ターミナルではプロンプト上のツールバーバンドに相棒が表示され、**/pokeforge** でペインを開きます。Claude Code Desktop の Code タブと VS Code では、アプリの接続時に PokéForge ペインが開きます。閉じると、**/pokeforge** を実行するまで閉じたままになります。Claude Code Mods は早期アクセス機能です。詳しくは[プラグインガイド](plugins/pokeforge/README.md#install-in-claude-code)を参照してください。
 
 v2.6.3 を含む、PokéForge 前のすべてのビルドは、旧 `sacrezm/PokeTokenBar` の完全一致する `html_url` だけを受け入れます。GitHub の名称変更によるリダイレクトは新しい canonical URL を返すため、旧ビルドはリリースを検出できません。**最初の PokéForge リリースは1回だけ手動でインストールしてください。**
 
