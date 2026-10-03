@@ -11,6 +11,7 @@
 ## 현재 제공
 
 - **Codex 플러그인:** 기존 PokéForge 저장 데이터를 그대로 사용하여 Codex 안에서 동료, 훈련, 컬렉션, 사용량, 가방과 상점을 엽니다. [설치 안내](plugins/pokeforge/README.md). 메뉴 막대 앱 없이 독립 실행되며, 포함된 엔진이 기존 세이브를 사용합니다.
+- **Claude Code 모드:** Claude Code에서도 같은 동료, 컬렉션, 활동, 상점을 같은 엔진과 세이브로 사용합니다. 터미널에서는 프롬프트 위의 툴바 밴드와 **/pokeforge** 창으로 열립니다. [설치 안내](plugins/pokeforge/README.md#install-in-claude-code).
 - **훈련:** 레벨 5–100, XP, EV, Catch / Train / Balanced 모드를 지원합니다.
 - **사용량 추적:** Claude Code, Codex, Gemini CLI, Antigravity, OpenCode, Hermes Agent, Cursor, Grok CLI, Copilot CLI, Kiro CLI, Pi Agent, omp의 로컬 사용량 기록을 읽습니다. 오늘·주·월 합계와 지원되는 공식 한도를 보여 줍니다.
 - **부화와 진화:** 코딩 사용량으로 알을 부화하고 실제 진화 계보를 따라 동료를 키운 뒤, 완성한 포켓몬을 컬렉션에 졸업시킵니다. 부화에는 희귀도·성격·이로치가 적용됩니다.
@@ -44,6 +45,15 @@
 [PokéForge 릴리스](https://github.com/sacrezm/pokeforge/releases)에서 앱 ZIP을 내려받으세요. GitHub가 자동으로 만드는 소스 코드 ZIP이 아니라 빌드된 앱 ZIP을 사용하고, 압축을 푼 앱을 `/Applications`로 옮깁니다.
 
 `PokeForge-v<VERSION>.zip`에는 macOS 14 이상, Apple Silicon·Intel용 `PokeForge.app`이 들어 있습니다. Codex 플러그인은 Node.js 24 이상이 필요하며, 별도의 플러그인 ZIP도 제공합니다.
+
+**Claude Code 플러그인:** Node.js 24 이상을 설치한 뒤 다음을 실행하세요.
+
+```sh
+claude plugin marketplace add sacrezm/pokeforge
+claude plugin install pokeforge@pokeforge
+```
+
+Codex 플러그인과 같은 번들 엔진과 세이브를 사용하므로 별도의 세이브가 생기지 않습니다. 터미널에서는 프롬프트 위의 툴바 밴드에 동료가 표시되고 **/pokeforge**로 창을 엽니다. Claude Code Desktop의 Code 탭과 VS Code에서는 앱이 연결될 때 PokéForge 창이 열리며, 창을 닫으면 **/pokeforge**를 다시 실행할 때까지 닫힌 상태로 유지됩니다. Claude Code Mods는 얼리 액세스 기능입니다. 자세한 내용은 [플러그인 안내](plugins/pokeforge/README.md#install-in-claude-code)를 참고하세요.
 
 v2.6.3을 포함한 모든 PokéForge 이전 빌드는 예전 `sacrezm/PokeTokenBar`의 정확한 `html_url`만 허용합니다. GitHub 이름 변경의 리디렉션은 새 canonical URL을 돌려주므로, 이전 빌드는 릴리스를 찾지 못합니다. **첫 PokéForge 릴리스는 한 번 수동으로 설치해야 합니다.**
 

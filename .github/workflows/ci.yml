@@ -26,8 +26,16 @@ jobs:
           cache-dependency-path: plugins/pokeforge/package-lock.json
       - run: npm ci
       - run: npm test
+      # Intent-to-add makes a generated but uncommitted bundle show up in the diff too.
       - name: Verify distributable matches source
-        run: git diff --exit-code -- dist
+        run: git add -N dist hooks tests/fixtures/copy.ts && git diff --exit-code -- dist hooks tests/fixtures/copy.ts
+      # Official CLI, pinned: the Mods API is early access and may change between releases.
+      - name: Validate and test the Claude mod
+        run: |
+          npm install -g @anthropic-ai/claude-code@2.1.287
+          claude plugin validate --strict .
+          claude plugin validate --strict ../..
+          claude plugin test .
 
   build-test:
     name: build-test

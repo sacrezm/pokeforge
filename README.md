@@ -25,6 +25,7 @@ PokéForge turns the AI tokens you already use into progress for your Pokémon. 
 ## What ships today
 
 - **Codex plugin.** Companion progress, training, owned collection, usage history, and the bag and shop inside Codex. It runs standalone with a bundled engine and shares existing saves. [Install the plugin](#codex-plugin).
+- **Claude Code mod.** The same companion, collection, activity and shop in Claude Code: a toolbar band above the prompt in the terminal and a **/pokeforge** pane, using the same engine and save. [Install the mod](#claude-code-plugin).
 - **Training.** Persistent levels 5–100, XP, capped EV stats, and Catch / Train / Balanced modes for locally raised and currently owned traded Pokémon.
 
 - **Usage tracking.** Read local usage records from Claude Code, Codex, Gemini CLI, Antigravity, OpenCode, Hermes Agent, Cursor, Grok CLI, Copilot CLI, Kiro CLI, Pi Agent, and omp. See today, week, and month totals, reported cost where available, and supported official limit windows.
@@ -98,6 +99,21 @@ The plugin runs locally and is not available in Codex Cloud or on Windows/Linux.
 
 The release also includes `PokeForge-Codex-v<VERSION>.zip` for installation from
 an extracted local marketplace. See [plugin installation, updates and troubleshooting](plugins/pokeforge/README.md).
+
+### Claude Code plugin
+
+Install [Node.js 24+](https://nodejs.org/en/download), then run:
+
+```sh
+claude plugin marketplace add sacrezm/pokeforge
+claude plugin install pokeforge@pokeforge
+```
+
+The companion, collection, activity and shop run on the same bundled engine and saves as the
+Codex plugin. In the terminal, a toolbar band above the prompt shows your companion and **/pokeforge**
+opens the pane. In Claude Code Desktop's Code tab and in VS Code, the PokéForge pane opens when the
+app connects; close it and it stays closed until you run **/pokeforge**. Claude Code Mods are early access. See the
+[plugin guide](plugins/pokeforge/README.md#install-in-claude-code).
 
 ### Moving from PokeTokenBar
 

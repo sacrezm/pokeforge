@@ -1,0 +1,20 @@
+{
+  "name": "pokeforge",
+  "displayName": "PokéForge",
+  "version": "2.7.0",
+  "description": "A Pokémon companion toolbar, collection, training and token shop for Claude Code. Includes its own local Mac engine and shares existing PokéForge saves.",
+  "author": {
+    "name": "Mathias"
+  },
+  "homepage": "https://github.com/sacrezm/pokeforge",
+  "repository": "https://github.com/sacrezm/pokeforge",
+  "license": "MIT",
+  "mcpServers": {
+    "pokeforge": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/dist/server.mjs"
+      ]
+    }
+  }
+}

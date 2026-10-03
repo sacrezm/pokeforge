@@ -32,4 +32,11 @@ codex plugin marketplace add sacrezm/pokeforge
 codex plugin add pokeforge@pokeforge
 ```
 
+**Claude Code plugin:** Install Node 24+, then run:
+
+```sh
+claude plugin marketplace add sacrezm/pokeforge
+claude plugin install pokeforge@pokeforge
+```
+
 **Upgrade:** Use PokéForge’s **Update & Restart**. Pre-PokéForge installations need one manual update. Existing saves and trainer credentials are retained.

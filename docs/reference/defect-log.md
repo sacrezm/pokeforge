@@ -7,9 +7,35 @@ read_when:
   - 메뉴바·플로팅 펫 등 상시 표시 애니메이션의 성능을 손볼 때
   - 스프라이트·이미지를 고정 크기 프레임에 그릴 때(비율 왜곡 부류)
   - 세이브 이전/병합·외부 파일 입력 경로를 만들 때
+  - Claude Code mod(`plugins/pokeforge/mod*.mjs`)의 수명주기·서피스·UI 요소를 건드릴 때
 ---
 
 # 결함 대응 축적 규칙
+
+## Claude Code mod host contract (2026-10-02)
+
+- `session.start` fires once per process (never on `/clear`), but `session.end` also fires
+  for `clear` and `resume`. Stopping on every end left the mod dead after `/clear`. Stop
+  only for other reasons; `tests/pokeforge.test.ts` covers both.
+- SDK hosts (Desktop's Code tab, VS Code) start non-interactive with `surface: null`;
+  clients join later through `session.attach`. Gating everything on `isInteractive` left
+  Desktop without the mod while every kit test passed, because each test started a
+  terminal REPL and then mounted remote surfaces. Start tests the way each host starts.
+- `$.ui.resolve(e)` hands out every constructor on every surface and draws an unsupported
+  one as nothing, so feature checks like `kit.Raster && …` are always true. Choose
+  elements by `e.surface`.
+- A `Select` needs 1–64 options (the 64 cap is enforced by 2.1.287, not in the 2.1.277
+  declarations). A 10-Pokémon fixture hid the refusal of the whole pane for an
+  85-Pokémon save: keep a real-sized fixture.
+- `$.env.get` reads Claude Code's own environment, where `CLAUDE_PLUGIN_ROOT` is not
+  set; use `$.plugin.root`. A mocked env in tests hid this. Host effects must stay
+  spelled `$.noun.event(...)`: keep per-effect closures, never store `$`.
+- Every snapshot attaches sprite art: remember a failed fetch (ten-minute `.miss`
+  marker) so an unreachable sprite host does not add its timeout to every poll.
+- Installed plugins' mods load only while the server-side rollout flag
+  `tengu_plugin_hooks_modules` serves on for the signed-in account; `claude plugin test`
+  then refuses too, and `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS` does not override it. CI and
+  `release.sh` run the kit tests with an empty `CLAUDE_CONFIG_DIR` (the flag's default).
 
 ## Native progress-track height across macOS versions (2026-10-01)
 
