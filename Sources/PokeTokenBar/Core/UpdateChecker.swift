@@ -6,6 +6,7 @@ import Observation
 @Observable
 final class UpdateChecker {
     struct Available: Equatable { let version: String; let url: String }
+    struct LatestRelease: Equatable, Sendable { let tag: String; let url: String }
 
     /// What Settings should say after a check. A skipped release is not "up to date".
     enum SettingsNotice: Equatable {
@@ -23,6 +24,7 @@ final class UpdateChecker {
     private let clock: () -> Date
     private let session: URLSession
     private let defaults: UserDefaults
+    private let fetchLatest: (() async -> LatestRelease?)?
     private let installUpdate: (() -> Void)?
     @ObservationIgnored private var installer: SparkleInstaller?
     @ObservationIgnored private var automaticTask: Task<Void, Never>?
@@ -34,13 +36,22 @@ final class UpdateChecker {
 
     init(currentVersion: String? = nil, clock: @escaping () -> Date = Date.init,
          session: URLSession = .shared, defaults: UserDefaults = .standard,
-         installUpdate: (() -> Void)? = nil) {
+         installUpdate: (() -> Void)? = nil,
+         fetchLatest: (() async -> LatestRelease?)? = nil) {
         self.currentVersion = currentVersion
             ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0"
         self.clock = clock
         self.session = session
         self.defaults = defaults
         self.installUpdate = installUpdate
+        self.fetchLatest = fetchLatest
+    }
+
+    convenience init(currentVersion: String? = nil, clock: @escaping () -> Date = Date.init,
+                     defaults: UserDefaults = .standard,
+                     fetchLatest: @escaping () async -> LatestRelease?) {
+        self.init(currentVersion: currentVersion, clock: clock, session: .shared,
+                  defaults: defaults, installUpdate: nil, fetchLatest: fetchLatest)
     }
 
     /// App-owned, so closing the popover does not stop discovery. No silent installs.
@@ -75,11 +86,21 @@ final class UpdateChecker {
     func check(minInterval: TimeInterval = 1800) async {
         guard !isChecking else { return }
         if let last = lastChecked, clock().timeIntervalSince(last) < minInterval { return }
-        lastChecked = clock()
         isChecking = true
         defer { isChecking = false }
         checkFailed = false
         noPublishedRelease = false
+        if let fetchLatest {
+            guard let release = await fetchLatest(),
+                  Self.isTrustedReleaseURL(release.url),
+                  let version = Self.normalizedReleaseVersion(release.tag) else {
+                checkFailed = true
+                return
+            }
+            lastChecked = clock()
+            consider(latest: version, url: release.url)
+            return
+        }
         guard let url = URL(string: "https://api.github.com/repos/\(Self.repository)/releases/latest") else { return }
         var req = URLRequest(url: url, timeoutInterval: 15)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
@@ -100,11 +121,27 @@ final class UpdateChecker {
               let htmlURL = URL(string: html),
               htmlURL.absoluteString == "https://github.com/\(Self.repository)/releases/tag/\(tag)"
         else { checkFailed = true; return }
+        lastChecked = clock()
         consider(latest: tag, url: html)
         if minInterval == 0, let skipped {
             available = skipped
             self.skipped = nil
         }
+    }
+
+    nonisolated static func isTrustedReleaseURL(_ string: String) -> Bool {
+        guard let url = URL(string: string), url.scheme == "https", url.host == "github.com" else { return false }
+        return url.path.hasPrefix("/\(repository)/releases/tag/")
+    }
+
+    nonisolated static func normalizedReleaseVersion(_ tag: String) -> String? {
+        var version = Substring(tag.trimmingCharacters(in: .whitespacesAndNewlines))
+        if version.first == "v" || version.first == "V" { version = version.dropFirst() }
+        let parts = version.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 3,
+              parts.allSatisfy({ !$0.isEmpty && $0.count <= 9 && $0.allSatisfy { $0.isASCII && $0.isNumber } })
+        else { return nil }
+        return parts.map { String(Int($0)!) }.joined(separator: ".")
     }
 
     /// Apply one fetched release while retaining a skipped release for Settings.

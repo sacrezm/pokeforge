@@ -10,12 +10,16 @@ BUILD_DIR="build"
 APP="$BUILD_DIR/$APP_NAME.app"
 
 echo "==> swift build -c release"
-BUILD_ARGS=(-c release)
 if [[ "${PTB_UNIVERSAL:-0}" == "1" ]]; then
-    BUILD_ARGS+=(--arch arm64 --arch x86_64)
+    SLICES=()
+    for arch in arm64 x86_64; do
+        swift build -c release --arch "$arch"
+        SLICES+=("$(swift build -c release --arch "$arch" --show-bin-path)/$APP_NAME")
+    done
+else
+    swift build -c release
+    BIN_DIR=$(swift build -c release --show-bin-path)
 fi
-swift build "${BUILD_ARGS[@]}"
-BIN_DIR=$(swift build "${BUILD_ARGS[@]}" --show-bin-path)
 SPARKLE_FRAMEWORK=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 [[ -d "$SPARKLE_FRAMEWORK" ]] || { echo "Sparkle framework missing" >&2; exit 1; }
 [[ -f scripts/sparkle-public-key.txt ]] || { echo "Configure the public Sparkle update key first; see RELEASE.md" >&2; exit 1; }
@@ -27,7 +31,12 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 mkdir -p "$APP/Contents/Frameworks"
 ditto "$SPARKLE_FRAMEWORK" "$APP/Contents/Frameworks/Sparkle.framework"
-cp "$BIN_DIR/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
+if [[ "${PTB_UNIVERSAL:-0}" == "1" ]]; then
+    lipo -create "${SLICES[@]}" -output "$APP/Contents/MacOS/$APP_NAME"
+    lipo "$APP/Contents/MacOS/$APP_NAME" -verify_arch arm64 x86_64
+else
+    cp "$BIN_DIR/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
+fi
 # 심볼 strip — 릴리스 바이너리 1.84MB → 0.80MB(-57%). codesign 전에 수행(서명 무효화 방지).
 strip -rSTx "$APP/Contents/MacOS/$APP_NAME" 2>/dev/null || strip -rSx "$APP/Contents/MacOS/$APP_NAME"
 cp assets/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
